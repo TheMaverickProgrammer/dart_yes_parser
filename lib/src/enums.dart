@@ -13,19 +13,35 @@ enum Elements {
   global('!'),
   comment('#');
 
-  final String value;
-  const Elements(this.value);
+  final String symbol;
+  const Elements(this.symbol);
 }
 
 enum Glyphs {
   equal('='),
-  attribute('@'),
+  at('@'),
   bang('!'),
   hash('#'),
   space(' '),
   comma(','),
   quote(r'"');
 
-  final String value;
-  const Glyphs(this.value);
+  final String char;
+  const Glyphs(this.char);
+}
+
+enum Errors {
+  badTokenPosAttribute('Element using attribute prefix out-of-place.'),
+  badTokenPosBang('Element using global prefix out-of-place.'),
+  eolNoData('Nothing to parse (EOL).'),
+  eolMissingElement('Missing element name (EOL).'),
+  eolMissingAttribute('Missing attribute name (EOL).'),
+  eolMissingGlobal('Missing global identifier (EOL).'),
+  unterminatedQuote('Missing end quote in expression');
+
+  final String message;
+  const Errors(this.message);
+
+  @override
+  String toString() => message;
 }

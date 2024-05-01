@@ -6,7 +6,7 @@ import 'package:yes_parser/src/element.dart';
 class LineParser {
   Delimiters _delimiter = Delimiters.unset;
   Element? _element;
-  String? _error;
+  Errors? _error;
 
   bool get isDelimiterSet {
     return _delimiter != Delimiters.unset;
@@ -16,7 +16,7 @@ class LineParser {
     return _error == null;
   }
 
-  String? get error {
+  Errors? get error {
     return _error;
   }
 
@@ -42,7 +42,7 @@ class LineParser {
     final int len = line.length;
 
     if (len == 0) {
-      setError("EOL");
+      setError(Errors.eolNoData);
       return;
     }
 
@@ -56,13 +56,7 @@ class LineParser {
         continue;
       }
 
-      // Not found
-      if (pos == -1) {
-        setError("EOL");
-        return;
-      }
-
-      final int idx = Glyphs.values.indexWhere((el) => el.value == line[pos]);
+      final int idx = Glyphs.values.indexWhere((el) => el.char == line[pos]);
 
       // Standard token
       if (idx == -1) {
@@ -78,9 +72,9 @@ class LineParser {
             _element = Element.comment(line.substring(pos));
             return;
           }
-        case Glyphs.attribute:
+        case Glyphs.at:
           if (type != Elements.standard) {
-            setError('Element using attribute prefix out-of-place.');
+            setError(Errors.badTokenPosAttribute);
             return;
           }
           type = Elements.attribute;
@@ -88,7 +82,7 @@ class LineParser {
           continue;
         case Glyphs.bang:
           if (type != Elements.standard) {
-            setError('Element using global prefix out-of-place.');
+            setError(Errors.badTokenPosBang);
           }
           type = Elements.global;
           pos++;
@@ -101,18 +95,18 @@ class LineParser {
     }
     // Step 3: find end of element name (first space or EOL)
     pos = min(pos, len);
-    final int end = min(len, line.indexOf(Glyphs.space.value, pos));
+    final int end = min(len, line.indexOf(Glyphs.space.char, pos));
     final String name = line.substring(pos, end);
     if (name.isEmpty) {
-      String reason = "Missing element identifier (EOL)";
+      Errors errorType = Errors.eolMissingElement;
 
       if (type == Elements.attribute) {
-        reason = "Missing attribute identifier (EOL)";
+        errorType = Errors.eolMissingAttribute;
       } else if (type == Elements.global) {
-        reason = "Missing global identifier (EOL)";
+        errorType = Errors.eolMissingGlobal;
       }
 
-      setError(reason);
+      setError(errorType);
       return;
     }
 
@@ -146,7 +140,7 @@ class LineParser {
   }
 
   int parseTokenStep(String input, int start) {
-    int tokenStart = input.indexOf(Glyphs.space.value, start);
+    int tokenStart = input.indexOf(Glyphs.space.char, start);
 
     // If we've reached the end of input, use the end pos to indicate such
     if (tokenStart == -1) {
@@ -165,10 +159,10 @@ class LineParser {
 
     // Step 1: skip string literals beginning and ending with quotes
     while (current < len) {
-      int quotePos = input.indexOf(Glyphs.quote.value, current);
+      int quotePos = input.indexOf(Glyphs.quote.char, current);
       if (quoted) {
         if (quotePos == -1) {
-          setError("Missing end quote in expression");
+          setError(Errors.unterminatedQuote);
           return len;
         }
         quoted = false;
@@ -177,8 +171,8 @@ class LineParser {
         continue;
       }
 
-      int spacePos = input.indexOf(Glyphs.space.value, current);
-      int commaPos = input.indexOf(Glyphs.comma.value, current);
+      int spacePos = input.indexOf(Glyphs.space.char, current);
+      int commaPos = input.indexOf(Glyphs.comma.char, current);
 
       if (quotePos > -1 && quotePos < spacePos && quotePos < commaPos) {
         quoted = true;
@@ -206,8 +200,8 @@ class LineParser {
     // or first token character (non-space)
     while (!isDelimiterSet && current < len) {
       final String c = input[current];
-      final bool isComma = Glyphs.comma.value == c;
-      final bool isSpace = Glyphs.space.value == c;
+      final bool isComma = Glyphs.comma.char == c;
+      final bool isSpace = Glyphs.space.char == c;
 
       if (isComma) {
         setDelimiterType(Delimiters.spaceComma);
@@ -231,12 +225,13 @@ class LineParser {
   }
 
   void evaluateToken(String input, int start, int end) {
+    // Should never happen
     assert(_element != null, "Element was not initialized.");
 
     final String token = input.substring(start, end);
 
     // Named kay values are seperated by equals tokens
-    final int equalPos = token.indexOf(Glyphs.equal.value);
+    final int equalPos = token.indexOf(Glyphs.equal.char);
     if (equalPos != -1) {
       final KeyVal kv = KeyVal(
           key: token.substring(0, equalPos),
@@ -255,8 +250,8 @@ class LineParser {
     _error = null;
   }
 
-  void setError(String reason) {
-    _error = reason;
+  void setError(Errors type) {
+    _error = type;
   }
 
   bool setDelimiterType(Delimiters type) {

@@ -57,7 +57,7 @@ class Element {
 
   @override
   String toString() {
-    return "${type.value}$text${_printArgs()}";
+    return "${type.symbol}$text${_printArgs()}";
   }
 
   String _printArgs() {
