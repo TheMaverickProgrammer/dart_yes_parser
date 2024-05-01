@@ -2,18 +2,18 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:yes_parser/src/element.dart';
-import 'package:yes_parser/src/line_parser.dart';
+import 'package:yes_parser/src/element_parser.dart';
 
 typedef Thennable = void Function(List<Element>, List<String>);
 
-class Parser {
+class YesParser {
   List<Element> elements = [];
   List<String> errors = [];
   int lineCount = 0;
   Thennable? _onComplete;
   late Future<void> _future;
 
-  Parser.fromFile(File file) {
+  YesParser.fromFile(File file) {
     _future = file
         .openRead()
         .transform(utf8.decoder)
@@ -23,7 +23,7 @@ class Parser {
         .then((_) => _handleComplete());
   }
 
-  Parser.fromString(String source) {
+  YesParser.fromString(String source) {
     source.split('\n').forEach((line) => _handleLine(line));
     _onComplete?.call(elements, errors);
     _future = Future.value();
@@ -49,7 +49,7 @@ class Parser {
 
   void _handleLine(String line) {
     lineCount++;
-    final p = LineParser.read(line);
+    final p = ElementParser.read(line);
 
     if (!p.isOk) {
       errors.add("[$lineCount]: ${p.error}");

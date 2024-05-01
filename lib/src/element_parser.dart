@@ -3,7 +3,7 @@ import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
 import 'package:yes_parser/src/element.dart';
 
-class LineParser {
+class ElementParser {
   Delimiters _delimiter = Delimiters.unset;
   Element? _element;
   Errors? _error;
@@ -36,7 +36,7 @@ class LineParser {
     return _element!;
   }
 
-  LineParser.read(String line) {
+  ElementParser.read(String line) {
     // Step 1: Trim whitespace and start at the first valid character
     line = line.trim();
     final int len = line.length;

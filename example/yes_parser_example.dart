@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:yes_parser/yes_parser.dart';
 
 void main() async {
-  final p = Parser.fromFile(File.fromUri(Uri.file("test.anim")))
+  final p = YesParser.fromFile(File.fromUri(Uri.file("test.anim")))
     ..then((List<Element> elements, List<String> errors) {
       for (final Element el in elements) {
         print(el);
