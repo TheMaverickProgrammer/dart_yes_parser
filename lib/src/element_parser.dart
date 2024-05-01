@@ -22,15 +22,15 @@ class ElementParser {
 
   String get delimiter {
     return switch (_delimiter) {
-      Delimiters.spaceComma => ',',
-      Delimiters.spaceOnly => ' ',
-      _ => '',
+      Delimiters.spaceComma => Glyphs.comma.char,
+      Delimiters.spaceOnly => Glyphs.space.char,
+      _ => Glyphs.none.char,
     };
   }
 
   Element get element {
     if (_element == null) {
-      throw Exception("Null element! Use `isOk` before accessing!");
+      throw Exception('Null element! Use getter `isOk` before accessing!');
     }
 
     return _element!;
@@ -51,7 +51,7 @@ class ElementParser {
 
     while (pos < len) {
       // Find first non-space character
-      if (line[pos] == ' ') {
+      if (line[pos] == Glyphs.space.char) {
         pos++;
         continue;
       }
@@ -69,7 +69,8 @@ class ElementParser {
       switch (glyph) {
         case Glyphs.hash:
           if (type == Elements.standard) {
-            _element = Element.comment(line.substring(pos));
+            // Take everything beyond the hash as the comment content
+            _element = Element.comment(line.substring(pos + 1));
             return;
           }
         case Glyphs.at:
@@ -83,19 +84,30 @@ class ElementParser {
         case Glyphs.bang:
           if (type != Elements.standard) {
             setError(Errors.badTokenPosBang);
+            return;
           }
           type = Elements.global;
           pos++;
           continue;
         case _:
+        /* fall through to end the loop */
       }
 
       // end the loop
       break;
     }
+
     // Step 3: find end of element name (first space or EOL)
     pos = min(pos, len);
-    final int end = min(len, line.indexOf(Glyphs.space.char, pos));
+    final int idx = line.indexOf(Glyphs.space.char, pos);
+
+    final int end;
+    if (idx < 0) {
+      end = len;
+    } else {
+      end = min(len, idx);
+    }
+
     final String name = line.substring(pos, end);
     if (name.isEmpty) {
       Errors errorType = Errors.eolMissingElement;
@@ -110,6 +122,7 @@ class ElementParser {
       return;
     }
 
+    // Comment element case handled already above
     switch (type) {
       case Elements.attribute:
         _element = Element.attribute(name);
@@ -130,8 +143,8 @@ class ElementParser {
 
     // Evaluate all tokens on line
     while (end < input.length) {
-      start = end = parseTokenStep(input, start);
-      start++;
+      end = parseTokenStep(input, end + 1);
+
       // Abort early if there is a problem
       if (!isOk) {
         return;
@@ -140,11 +153,21 @@ class ElementParser {
   }
 
   int parseTokenStep(String input, int start) {
-    int tokenStart = input.indexOf(Glyphs.space.char, start);
+    final int len = input.length;
 
-    // If we've reached the end of input, use the end pos to indicate such
-    if (tokenStart == -1) {
-      tokenStart = input.length;
+    // Find first non-space character
+    while (start < len) {
+      if (Glyphs.space.char == input[start]) {
+        start++;
+        continue;
+      }
+
+      // Current character is non-space
+      break;
+    }
+
+    if (start >= len) {
+      return len;
     }
 
     final int end = evaluateDelimiter(input, start);
@@ -171,8 +194,8 @@ class ElementParser {
         continue;
       }
 
-      int spacePos = input.indexOf(Glyphs.space.char, current);
-      int commaPos = input.indexOf(Glyphs.comma.char, current);
+      final int spacePos = input.indexOf(Glyphs.space.char, current);
+      final int commaPos = input.indexOf(Glyphs.comma.char, current);
 
       if (quotePos > -1 && quotePos < spacePos && quotePos < commaPos) {
         quoted = true;
@@ -184,7 +207,7 @@ class ElementParser {
         return len;
       }
 
-      // use the first (nearest) valid delimiter
+      // Use the first (nearest) valid delimiter
       if (spacePos == -1 && commaPos > -1) {
         current = commaPos;
       } else if (spacePos > -1 && commaPos == -1) {
@@ -206,7 +229,7 @@ class ElementParser {
       if (isComma) {
         setDelimiterType(Delimiters.spaceComma);
         break;
-      } else if (isSpace) {
+      } else if (!isSpace) {
         setDelimiterType(Delimiters.spaceOnly);
         break;
       }
@@ -221,21 +244,28 @@ class ElementParser {
 
     // Step 3: use delimiter type to find next end position
     // which will result in the range [start,end] to be the next token
-    return min(len, input.indexOf(delimiter, start));
+    final int idx = input.indexOf(delimiter, start);
+    if (idx == -1) {
+      // Possibly last keyval token. EOL.
+      return len;
+    }
+
+    return min(len, idx);
   }
 
   void evaluateToken(String input, int start, int end) {
     // Should never happen
-    assert(_element != null, "Element was not initialized.");
+    assert(_element != null, 'Element was not initialized.');
 
-    final String token = input.substring(start, end);
+    // Trim white spaces around the equal symbol
+    final String token = input.substring(start, end).trim();
 
     // Named kay values are seperated by equals tokens
     final int equalPos = token.indexOf(Glyphs.equal.char);
     if (equalPos != -1) {
       final KeyVal kv = KeyVal(
-          key: token.substring(0, equalPos),
-          val: token.substring(equalPos + 1, end - start));
+          key: token.substring(0, equalPos).trim(),
+          val: token.substring(equalPos + 1, token.length).trim());
 
       _element?.upsert(kv);
       return;

@@ -18,6 +18,7 @@ enum Elements {
 }
 
 enum Glyphs {
+  none(''),
   equal('='),
   at('@'),
   bang('!'),
