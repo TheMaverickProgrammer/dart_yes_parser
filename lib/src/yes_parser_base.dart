@@ -3,15 +3,60 @@ import 'dart:convert';
 
 import 'package:yes_parser/src/element.dart';
 import 'package:yes_parser/src/element_parser.dart';
+import 'package:yes_parser/src/enums.dart';
 
-typedef Thennable = void Function(List<Element>, List<String>);
+/// YesParserErrorInfo
+/// int line
+/// String message
+/// YesSpecErrors type
+///
+/// This class represents a printable error info object with line numbers
+class YesParserErrorInfo {
+  final int line;
+  final String message;
+  final YesSpecErrors type;
 
+  YesParserErrorInfo(this.line, this.type) : message = type.message;
+
+  // For runtime parsing issues unrelated to the YES spec itself
+  const YesParserErrorInfo.other(this.line, this.message)
+      : type = YesSpecErrors.runtime;
+
+  @override
+  String toString() {
+    return '[Line $line] $message';
+  }
+}
+
+/// Thennable is a future-like `then` construct for on-completed callbacks
+typedef Thennable = void Function(List<Element>, List<YesParserErrorInfo>);
+
+/// YesParser
+/// bool isComplete
+///
+/// This parser follows the YES specification to identify and extract Elements
+/// from each line. The element list and any errors can be obtain by providing
+/// a callback function to `then((elements, errors) {})`.
+///
+/// The parser can read asynchronously from a file using `YesParser.fromFile()`
+/// To block and wait for the result, use `await parser.join()`
+///
+/// The parser can read from a String using `YesParser.fromString()`
+/// This constructor performs synchronously and does not need to join.
+///
+/// Additionally you can check the getter `isComplete` for true.
 class YesParser {
-  List<Element> elements = [];
-  List<String> errors = [];
-  int lineCount = 0;
+  final List<Element> _attrs = [];
+  final List<Element> _elements = [];
+  final List<YesParserErrorInfo> _errors = [];
+  int _lineCount = 0;
   Thennable? _onComplete;
   late Future<void> _future;
+  bool _isComplete = false;
+
+  bool get isComplete {
+    return _isComplete;
+  }
 
   YesParser.fromFile(File file) {
     _future = file
@@ -25,7 +70,7 @@ class YesParser {
 
   YesParser.fromString(String source) {
     source.split('\n').forEach((line) => _handleLine(line));
-    _onComplete?.call(elements, errors);
+    _handleComplete();
     _future = Future.value();
   }
 
@@ -38,24 +83,36 @@ class YesParser {
   }
 
   void _handleError(error, stackTrace) {
-    errors.add(error.toString());
-    errors.add(stackTrace.toString());
+    _errors.add(YesParserErrorInfo.other(_lineCount, error.toString()));
     _handleComplete();
   }
 
   void _handleComplete() {
-    _onComplete?.call(elements, errors);
+    _onComplete?.call(_elements, _errors);
+    _isComplete = true;
   }
 
   void _handleLine(String line) {
-    lineCount++;
+    _lineCount++;
     final p = ElementParser.read(line);
 
     if (!p.isOk) {
-      errors.add("[$lineCount]: ${p.error}");
+      _errors.add(YesParserErrorInfo(_lineCount, p.error!));
       return;
     }
 
-    elements.add(p.element);
+    switch (p.element.type) {
+      case Elements.attribute:
+        _attrs.add(p.element);
+        return;
+      case Elements.standard:
+        p.element.setAttributes(_attrs);
+        _attrs.clear();
+        break;
+      case _:
+      /* fall-through */
+    }
+
+    _elements.add(p.element);
   }
 }

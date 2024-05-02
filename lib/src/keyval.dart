@@ -1,3 +1,11 @@
+/// KeyVal
+/// String? key
+/// String val
+/// bool isNamesless
+///
+/// KeyVal represent YES spec keyvalues.
+/// `key` can be null, representing Nameless Keyvalues.
+/// `val` is stored as a String internally.
 class KeyVal {
   final String? key;
   final String val;

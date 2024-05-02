@@ -3,10 +3,12 @@ import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
 import 'package:yes_parser/src/element.dart';
 
+/// Parse the element from a line following the YES specification.
+/// Used internally by the YesParser.
 class ElementParser {
   Delimiters _delimiter = Delimiters.unset;
   Element? _element;
-  Errors? _error;
+  YesSpecErrors? _error;
 
   bool get isDelimiterSet {
     return _delimiter != Delimiters.unset;
@@ -16,7 +18,7 @@ class ElementParser {
     return _error == null;
   }
 
-  Errors? get error {
+  YesSpecErrors? get error {
     return _error;
   }
 
@@ -42,7 +44,7 @@ class ElementParser {
     final int len = line.length;
 
     if (len == 0) {
-      setError(Errors.eolNoData);
+      setError(YesSpecErrors.eolNoData);
       return;
     }
 
@@ -75,7 +77,7 @@ class ElementParser {
           }
         case Glyphs.at:
           if (type != Elements.standard) {
-            setError(Errors.badTokenPosAttribute);
+            setError(YesSpecErrors.badTokenPosAttribute);
             return;
           }
           type = Elements.attribute;
@@ -83,7 +85,7 @@ class ElementParser {
           continue;
         case Glyphs.bang:
           if (type != Elements.standard) {
-            setError(Errors.badTokenPosBang);
+            setError(YesSpecErrors.badTokenPosBang);
             return;
           }
           type = Elements.global;
@@ -110,12 +112,12 @@ class ElementParser {
 
     final String name = line.substring(pos, end);
     if (name.isEmpty) {
-      Errors errorType = Errors.eolMissingElement;
+      YesSpecErrors errorType = YesSpecErrors.eolMissingElement;
 
       if (type == Elements.attribute) {
-        errorType = Errors.eolMissingAttribute;
+        errorType = YesSpecErrors.eolMissingAttribute;
       } else if (type == Elements.global) {
-        errorType = Errors.eolMissingGlobal;
+        errorType = YesSpecErrors.eolMissingGlobal;
       }
 
       setError(errorType);
@@ -185,7 +187,7 @@ class ElementParser {
       int quotePos = input.indexOf(Glyphs.quote.char, current);
       if (quoted) {
         if (quotePos == -1) {
-          setError(Errors.unterminatedQuote);
+          setError(YesSpecErrors.unterminatedQuote);
           return len;
         }
         quoted = false;
@@ -280,7 +282,7 @@ class ElementParser {
     _error = null;
   }
 
-  void setError(Errors type) {
+  void setError(YesSpecErrors type) {
     _error = type;
   }
 

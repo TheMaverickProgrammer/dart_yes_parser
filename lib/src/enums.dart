@@ -31,17 +31,18 @@ enum Glyphs {
   const Glyphs(this.char);
 }
 
-enum Errors {
+enum YesSpecErrors {
   badTokenPosAttribute('Element using attribute prefix out-of-place.'),
   badTokenPosBang('Element using global prefix out-of-place.'),
   eolNoData('Nothing to parse (EOL).'),
   eolMissingElement('Missing element name (EOL).'),
   eolMissingAttribute('Missing attribute name (EOL).'),
   eolMissingGlobal('Missing global identifier (EOL).'),
-  unterminatedQuote('Missing end quote in expression');
+  unterminatedQuote('Missing end quote in expression.'),
+  runtime('Unexpected runtime error.'); // Reserved for misc. parsing issues
 
   final String message;
-  const Errors(this.message);
+  const YesSpecErrors(this.message);
 
   @override
   String toString() => message;
