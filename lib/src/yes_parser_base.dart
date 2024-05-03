@@ -5,22 +5,21 @@ import 'package:yes_parser/src/element.dart';
 import 'package:yes_parser/src/element_parser.dart';
 import 'package:yes_parser/src/enums.dart';
 
-/// YesParserErrorInfo
+/// ErrorInfo
 /// int line
 /// String message
-/// YesSpecErrors type
+/// ErrorType type
 ///
 /// This class represents a printable error info object with line numbers
-class YesParserErrorInfo {
+class ErrorInfo {
   final int line;
   final String message;
-  final YesSpecErrors type;
+  final ErrorType type;
 
-  YesParserErrorInfo(this.line, this.type) : message = type.message;
+  ErrorInfo(this.line, this.type) : message = type.message;
 
   // For runtime parsing issues unrelated to the YES spec itself
-  const YesParserErrorInfo.other(this.line, this.message)
-      : type = YesSpecErrors.runtime;
+  const ErrorInfo.other(this.line, this.message) : type = ErrorType.runtime;
 
   @override
   String toString() {
@@ -29,7 +28,7 @@ class YesParserErrorInfo {
 }
 
 /// Thennable is a future-like `then` construct for on-completed callbacks
-typedef Thennable = void Function(List<Element>, List<YesParserErrorInfo>);
+typedef Thennable = void Function(List<Element>, List<ErrorInfo>);
 
 /// YesParser
 /// bool isComplete
@@ -48,7 +47,7 @@ typedef Thennable = void Function(List<Element>, List<YesParserErrorInfo>);
 class YesParser {
   final List<Element> _attrs = [];
   final List<Element> _elements = [];
-  final List<YesParserErrorInfo> _errors = [];
+  final List<ErrorInfo> _errors = [];
   int _lineCount = 0;
   Thennable? _onComplete;
   late Future<void> _future;
@@ -83,7 +82,7 @@ class YesParser {
   }
 
   void _handleError(error, stackTrace) {
-    _errors.add(YesParserErrorInfo.other(_lineCount, error.toString()));
+    _errors.add(ErrorInfo.other(_lineCount, error.toString()));
     _handleComplete();
   }
 
@@ -94,25 +93,25 @@ class YesParser {
 
   void _handleLine(String line) {
     _lineCount++;
-    final p = ElementParser.read(line);
+    final p = ElementParser.read(_lineCount, line);
 
     if (!p.isOk) {
-      _errors.add(YesParserErrorInfo(_lineCount, p.error!));
+      _errors.add(ErrorInfo(_lineCount, p.error!));
       return;
     }
 
-    switch (p.element.type) {
-      case Elements.attribute:
-        _attrs.add(p.element);
+    switch (p.elementInfo.element.type) {
+      case ElementType.attribute:
+        _attrs.add(p.elementInfo.element);
         return;
-      case Elements.standard:
-        p.element.setAttributes(_attrs);
+      case ElementType.standard:
+        p.elementInfo.element.setAttributes(_attrs);
         _attrs.clear();
         break;
       case _:
       /* fall-through */
     }
 
-    _elements.add(p.element);
+    _elements.add(p.elementInfo.element);
   }
 }

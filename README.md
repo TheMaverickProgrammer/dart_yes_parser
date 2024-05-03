@@ -12,8 +12,8 @@ and the Flutter guide for
 -->
 
 YES Script - **Y**our **E**xtensible **S**cript is a meta scriptlet standard\
-whose ==elements and their meaning are determined by **YOU** the programmer==.\
-They can be extended further by use of ==attributes== which allow **YOUR**\
+whose elements and their meaning are determined by **YOU** the programmer.\
+They can be extended further by use of attributes which allow **YOUR**\
 end-users to make their additions to **YOUR** elements.
 
 ## YES Specification
@@ -62,8 +62,8 @@ wait 5s
 
 ### Keyvalues
 Keyvalues represent a `key` and a `value`.\
-If your elements are like functions, then ==keyvalues are like arguments==.
-If your elements are like objects, then ==keyvalues are like fields==.
+If your elements are like functions, then keyvalues are like arguments.\
+If your elements are like objects, then keyvalues are like fields.
 
 `fadeout 5s color=white`
 
@@ -96,7 +96,7 @@ by key. Instead, you will need to loop through the keyvalues yourself to\
 determine how to process them.
 
 ### Attributes
-Attributes are elements that ==embed themselves in the next standard element==.
+Attributes are elements that embed themselves in the next standard element.
 In otherwords, they can be stacked. Attributes provide meta-behavior which\
 you can optionally support in your own elements.
 
@@ -115,7 +115,7 @@ The animation format described by the elements above have a shifting origin xy.\
 Calculating the local origin relative to each frame's start xy can be hard for\
 your end-users. Entering the pixel-coordinate would be easier.
 
-We can support an optional ==attribute== `coords` to provide to the parser\
+We can support an optional attribute `coords` to provide to the parser\
 extra data (meta) inside of the next standard element `anim`.
 
 ```r

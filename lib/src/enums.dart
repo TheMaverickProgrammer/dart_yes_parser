@@ -7,14 +7,14 @@ enum Delimiters {
   const Delimiters(this.value);
 }
 
-enum Elements {
+enum ElementType {
   standard(''),
   attribute('@'),
   global('!'),
   comment('#');
 
   final String symbol;
-  const Elements(this.symbol);
+  const ElementType(this.symbol);
 }
 
 enum Glyphs {
@@ -31,7 +31,7 @@ enum Glyphs {
   const Glyphs(this.char);
 }
 
-enum YesSpecErrors {
+enum ErrorType {
   badTokenPosAttribute('Element using attribute prefix out-of-place.'),
   badTokenPosBang('Element using global prefix out-of-place.'),
   eolNoData('Nothing to parse (EOL).'),
@@ -42,7 +42,7 @@ enum YesSpecErrors {
   runtime('Unexpected runtime error.'); // Reserved for misc. parsing issues
 
   final String message;
-  const YesSpecErrors(this.message);
+  const ErrorType(this.message);
 
   @override
   String toString() => message;

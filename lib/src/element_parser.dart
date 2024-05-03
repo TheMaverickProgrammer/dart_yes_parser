@@ -3,12 +3,20 @@ import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
 import 'package:yes_parser/src/element.dart';
 
+class ElementInfo {
+  final Element element;
+  final int lineNumber;
+
+  ElementInfo(this.lineNumber, this.element);
+}
+
 /// Parse the element from a line following the YES specification.
 /// Used internally by the YesParser.
 class ElementParser {
   Delimiters _delimiter = Delimiters.unset;
   Element? _element;
-  YesSpecErrors? _error;
+  ErrorType? _error;
+  final int lineNumber;
 
   bool get isDelimiterSet {
     return _delimiter != Delimiters.unset;
@@ -18,7 +26,7 @@ class ElementParser {
     return _error == null;
   }
 
-  YesSpecErrors? get error {
+  ErrorType? get error {
     return _error;
   }
 
@@ -30,26 +38,26 @@ class ElementParser {
     };
   }
 
-  Element get element {
+  ElementInfo get elementInfo {
     if (_element == null) {
       throw Exception('Null element! Use getter `isOk` before accessing!');
     }
 
-    return _element!;
+    return ElementInfo(lineNumber, _element!);
   }
 
-  ElementParser.read(String line) {
+  ElementParser.read(this.lineNumber, String line) {
     // Step 1: Trim whitespace and start at the first valid character
     line = line.trim();
     final int len = line.length;
 
     if (len == 0) {
-      setError(YesSpecErrors.eolNoData);
+      setError(ErrorType.eolNoData);
       return;
     }
 
     int pos = 0;
-    Elements type = Elements.standard;
+    ElementType type = ElementType.standard;
 
     while (pos < len) {
       // Find first non-space character
@@ -70,25 +78,25 @@ class ElementParser {
       final Glyphs glyph = Glyphs.values[idx];
       switch (glyph) {
         case Glyphs.hash:
-          if (type == Elements.standard) {
+          if (type == ElementType.standard) {
             // Take everything beyond the hash as the comment content
             _element = Element.comment(line.substring(pos + 1));
             return;
           }
         case Glyphs.at:
-          if (type != Elements.standard) {
-            setError(YesSpecErrors.badTokenPosAttribute);
+          if (type != ElementType.standard) {
+            setError(ErrorType.badTokenPosAttribute);
             return;
           }
-          type = Elements.attribute;
+          type = ElementType.attribute;
           pos++;
           continue;
         case Glyphs.bang:
-          if (type != Elements.standard) {
-            setError(YesSpecErrors.badTokenPosBang);
+          if (type != ElementType.standard) {
+            setError(ErrorType.badTokenPosBang);
             return;
           }
-          type = Elements.global;
+          type = ElementType.global;
           pos++;
           continue;
         case _:
@@ -112,12 +120,12 @@ class ElementParser {
 
     final String name = line.substring(pos, end);
     if (name.isEmpty) {
-      YesSpecErrors errorType = YesSpecErrors.eolMissingElement;
+      ErrorType errorType = ErrorType.eolMissingElement;
 
-      if (type == Elements.attribute) {
-        errorType = YesSpecErrors.eolMissingAttribute;
-      } else if (type == Elements.global) {
-        errorType = YesSpecErrors.eolMissingGlobal;
+      if (type == ElementType.attribute) {
+        errorType = ErrorType.eolMissingAttribute;
+      } else if (type == ElementType.global) {
+        errorType = ErrorType.eolMissingGlobal;
       }
 
       setError(errorType);
@@ -126,10 +134,10 @@ class ElementParser {
 
     // Comment element case handled already above
     switch (type) {
-      case Elements.attribute:
+      case ElementType.attribute:
         _element = Element.attribute(name);
         break;
-      case Elements.global:
+      case ElementType.global:
         _element = Element.global(name);
         break;
       case _:
@@ -187,7 +195,7 @@ class ElementParser {
       int quotePos = input.indexOf(Glyphs.quote.char, current);
       if (quoted) {
         if (quotePos == -1) {
-          setError(YesSpecErrors.unterminatedQuote);
+          setError(ErrorType.unterminatedQuote);
           return len;
         }
         quoted = false;
@@ -282,7 +290,7 @@ class ElementParser {
     _error = null;
   }
 
-  void setError(YesSpecErrors type) {
+  void setError(ErrorType type) {
     _error = type;
   }
 

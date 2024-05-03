@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:yes_parser/src/enums.dart';
 import 'package:yes_parser/yes_parser.dart';
 
 /// This example demonstrates how to parse a file using the YES spec
@@ -13,7 +12,7 @@ void main() async {
   await p.join();
 }
 
-void printAll(List<Element> elements, List<YesParserErrorInfo> errors) {
+void printAll(List<Element> elements, List<ErrorInfo> errors) {
   // Print every element
   for (final el in elements) {
     // Print every attribute this element has
@@ -26,7 +25,7 @@ void printAll(List<Element> elements, List<YesParserErrorInfo> errors) {
   // Print errors with line numbers, if any
   for (final e in errors) {
     // Do not report empty lines (new lines)
-    if (e.type == YesSpecErrors.eolNoData) continue;
+    if (e.type == ErrorType.eolNoData) continue;
 
     print('Error: $e');
   }
