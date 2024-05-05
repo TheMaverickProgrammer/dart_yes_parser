@@ -32,7 +32,7 @@ class ElementParser {
 
   String get delimiter {
     return switch (_delimiter) {
-      Delimiters.spaceComma => Glyphs.comma.char,
+      Delimiters.commaOnly => Glyphs.comma.char,
       Delimiters.spaceOnly => Glyphs.space.char,
       _ => Glyphs.none.char,
     };
@@ -230,18 +230,38 @@ class ElementParser {
 
     // Step 2: determine delimiter if not yet set
     // by scanning white spaces in search for the first comma
-    // or first token character (non-space)
+    // or falling back to spaces if not found
+    int space = -1, equal = -1, quote = -1, prev = current;
     while (!isDelimiterSet && current < len) {
       final String c = input[current];
       final bool isComma = Glyphs.comma.char == c;
       final bool isSpace = Glyphs.space.char == c;
+      final bool isEqual = Glyphs.equal.char == c;
+      final bool isQuote = Glyphs.quote.char == c;
 
       if (isComma) {
-        setDelimiterType(Delimiters.spaceComma);
+        setDelimiterType(Delimiters.commaOnly);
         break;
-      } else if (!isSpace) {
-        setDelimiterType(Delimiters.spaceOnly);
-        break;
+      }
+
+      if (isSpace && space == -1) {
+        space = current;
+      }
+
+      if (isEqual && equal == -1 && quote == -1) {
+        equal = current;
+      }
+
+      // Quick hack to an oversight:
+      // Toggle on and off quote in this step too.
+      // TODO: refactor to make use of the above loop which does this already.
+      // 5/5/2024
+      if (isQuote) {
+        if (quote == -1) {
+          quote = current;
+        } else {
+          quote = -1;
+        }
       }
 
       current++;
@@ -249,7 +269,24 @@ class ElementParser {
 
     // EOL with no delimiter found
     if (!isDelimiterSet) {
-      return len;
+      // No space token found.
+      // Nothing to parse. Abort.
+      if (space == -1) {
+        return len;
+      }
+
+      // Take advantage of the fact comma delimiters
+      // Allow for spaces around the equal symbol
+      // NOTE: quote must be terminated where equal pos was.
+      if (equal > -1 && quote == -1) {
+        setDelimiterType(Delimiters.commaOnly);
+        // Go back to the starting point
+        current = prev;
+      } else {
+        setDelimiterType(Delimiters.spaceOnly);
+        // Go back to the first space token
+        current = space;
+      }
     }
 
     // Step 3: use delimiter type to find next end position

@@ -1,6 +1,6 @@
 enum Delimiters {
   unset(0),
-  spaceComma(1),
+  commaOnly(1),
   spaceOnly(2);
 
   final int value;

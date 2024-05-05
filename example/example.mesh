@@ -1,0 +1,59 @@
+# A custom file format example using YES scriplet parser
+# Renders a cube with 3 different textures.
+# 
+# Format Description:
+#   Every mesh needs a list of faces.
+#   Every face is followed by a list of vertices.
+#   Every vert can be optionally colored with attributes.
+#   One global element is used to tell the "engine" to use a texture by name.
+#   Another global element is used to change the mesh default scale.
+
+!scale 2.0, 2.0, 2.0
+!load_texture metal "metal_32.png"
+!load_texture grass "grass_32.png"
+!load_texture brick "brick_32.png"
+
+face texture = metal, name=f1
+vert -1, -1, -1
+vert 1, -1, -1
+vert 1, 1, -1
+vert -1, 1, -1 
+
+# Don't give this face any textures
+# Use optional color attributes instead 
+face name=f2
+@color #FF0000
+vert -1, -1, 1
+@color #00FF00
+vert 1, -1, 1
+@color #0000FF
+vert 1, 1, 1
+@color #FFFFFF
+vert -1, 1, 1
+
+face texture = brick, name=f3
+vert -1, -1, -1
+vert -1, 1, -1
+vert -1, 1, 1
+vert -1, -1, 1 
+
+face texture = grass, name=f4
+vert 1, -1, -1
+vert 1, 1, -1
+vert 1, 1, 1
+vert 1, -1, 1 
+
+face texture = grass, name=f5
+vert -1, -1, -1
+vert -1, -1, 1
+vert 1, -1, 1
+vert 1, -1, -1 
+
+face texture = metal, name=f6
+vert 1, 1, -1
+vert 1, 1, -1
+vert 1, 1, 1
+vert 1, 1, 1 
+
+# draw
+mesh f1 f2 f3 f4 f5 f6
