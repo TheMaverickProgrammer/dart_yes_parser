@@ -13,25 +13,25 @@
 !load_texture grass "grass_32.png"
 !load_texture brick "brick_32.png"
 
-face texture = metal, name=f1
-vert -1, -1, -1
-vert 1, -1, -1
-vert 1, 1, -1
-vert -1, 1, -1 
+face texture=metal, name=f1
+vert x=-1, y=-1, z=-1
+vert x = 1, y = -1, z = -1
+vert x =1, y =1, z =-1
+vert x= -1, y= 1, z= -1 
 
 # Don't give this face any textures
 # Use optional color attributes instead 
 face name=f2
 @color #FF0000
-vert -1, -1, 1
+vert x=-1 y=-1 z=1
 @color #00FF00
-vert 1, -1, 1
+vert 1 -1 1
 @color #0000FF
 vert 1, 1, 1
 @color #FFFFFF
 vert -1, 1, 1
 
-face texture = brick, name=f3
+face texture=brick name=f3
 vert -1, -1, -1
 vert -1, 1, -1
 vert -1, 1, 1

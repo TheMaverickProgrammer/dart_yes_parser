@@ -20,6 +20,7 @@ class KeyVal {
     if (isNameless) {
       return val;
     }
+
     return '${key!}=$val';
   }
 }

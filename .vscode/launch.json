@@ -8,7 +8,8 @@
         {
             "name": "yes_parser",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "program": "example/yes_parser_example.dart"
         }
     ]
 }
