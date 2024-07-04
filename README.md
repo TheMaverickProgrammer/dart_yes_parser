@@ -12,8 +12,7 @@ These constructors require the callback function to be set via `.onComplete(...)
 Loading by file is asynchronous and must be waited on for completion
 ```dart
 void main() async {
-  final p = YesParser.fromFile(File.fromUri(Uri.file("example.mesh")))
-    ..onComplete(onComplete);
+  final p = YesParser.fromFile(File.fromUri(Uri.file("example.mesh")), onComplete: onComplete);
 
   // Wait for parser to finish before ending program
   await p.join();
@@ -25,8 +24,7 @@ void onComplete(List<ElementInfo> elements, List<ErrorInfo> errors) { ... }
 Loading by string is synchronous and can be used immediately.
 ```dart
 void main() {
-  final p = YesParser.fromFile("...")
-    ..onComplete(onComplete);
+  final p = YesParser.fromFile("...", onComplete: onComplete);
 }
 
 void onComplete(List<ElementInfo> elements, List<ErrorInfo> errors) { ... }

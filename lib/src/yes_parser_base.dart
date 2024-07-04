@@ -56,7 +56,7 @@ class YesParser {
   final List<ElementInfo> _elements = [];
   final List<ErrorInfo> _errors = [];
   int _lineCount = 0;
-  ParseCompleteFunc? _onComplete;
+  final ParseCompleteFunc _onComplete;
   late Future<void> _future;
   bool _isComplete = false;
 
@@ -65,7 +65,8 @@ class YesParser {
     return _isComplete;
   }
 
-  YesParser.fromFile(File file) {
+  YesParser.fromFile(File file, {required ParseCompleteFunc onComplete})
+      : _onComplete = onComplete {
     _future = file
         .openRead()
         .transform(utf8.decoder)
@@ -75,14 +76,11 @@ class YesParser {
         .then((_) => _handleComplete());
   }
 
-  YesParser.fromString(String contents) {
+  YesParser.fromString(String contents, {required ParseCompleteFunc onComplete})
+      : _onComplete = onComplete {
     contents.split('\n').forEach((line) => _handleLine(line));
     _handleComplete();
     _future = Future.value();
-  }
-
-  void onComplete(ParseCompleteFunc func) {
-    _onComplete = func;
   }
 
   Future<void> join() async {
@@ -95,7 +93,7 @@ class YesParser {
   }
 
   void _handleComplete() {
-    _onComplete?.call(_elements, _errors);
+    _onComplete.call(_elements, _errors);
     _isComplete = true;
   }
 

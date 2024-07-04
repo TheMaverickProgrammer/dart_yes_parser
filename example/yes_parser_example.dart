@@ -5,8 +5,12 @@ import 'package:yes_parser/yes_parser.dart';
 /// And how to report errors after parsing.
 
 void main() async {
-  final p = YesParser.fromFile(File.fromUri(Uri.file("example/example.mesh")))
-    ..onComplete(printAll);
+  final File file = File.fromUri(Uri.file("example/example.mesh"));
+
+  final p = YesParser.fromFile(
+    file,
+    onComplete: printAll,
+  );
 
   // Wait for parser to finish before ending program
   await p.join();
