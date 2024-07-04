@@ -1,12 +1,9 @@
 name: yes_parser
 description: 
   Dart implementation of the YES scriplet standard.
-  YES is a meta scriptlet standard whose elements and meaning are determined
-  by the programmer. They can be extended further with attributes which
-  allow end-users to make their additions to those elements.
-  This library parses documents using the YES spec and delivers
-  the result as elements of type Global, Standard, Attribute, and Comment.
-  The programmer can use the KeyVal args passed into each element to
+  YES is a meta scriptlet standard whose elements and meaning are customized
+  by the programmer. This library parses files using the YES spec and delivers
+  the result as elements. Use the KeyVal args passed into each element to
   provide external functionality to their own software easily and quickly
   at no cost to readability or flexibility. It is a format for everyone.
 
