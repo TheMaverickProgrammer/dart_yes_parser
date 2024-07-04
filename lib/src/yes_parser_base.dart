@@ -5,12 +5,11 @@ import 'package:yes_parser/src/element.dart';
 import 'package:yes_parser/src/element_parser.dart';
 import 'package:yes_parser/src/enums.dart';
 
-/// ErrorInfo
-/// int line
-/// String message
-/// ErrorType type
+/// [ErrorInfo] has the offending [line] and reason [message].
+/// [type] can be pattern matched with one of the hard-coded [ErrorType]s.
 ///
-/// This class represents a printable error info object with line numbers
+/// Constructor [ErrorInfo.other] sets [type] to [ErrorType.runtime] which
+/// can be used for your own custom error [message]s.
 class ErrorInfo {
   final int line;
   final String message;
@@ -27,32 +26,41 @@ class ErrorInfo {
   }
 }
 
-/// Thennable is a future-like `then` construct for on-completed callbacks
-typedef Thennable = void Function(List<Element>, List<ErrorInfo>);
+/// [ElementInfo] has the [line] which parsed it and the result [Element].
+/// Knowing the [line] is useful because other parsers using this spec may need
+/// to raise additional errors if elements in their doc are missing specific
+/// [Standard.args] or have malformed values.
+class ElementInfo {
+  final int line;
+  final Element element;
 
-/// YesParser
-/// bool isComplete
+  ElementInfo(this.line, this.element);
+}
+
+/// [ParseCompleteFunc] is for on-completed callbacks
+typedef ParseCompleteFunc = void Function(List<ElementInfo>, List<ErrorInfo>);
+
+/// This parser follows the YES sepc to identify and extract [Element]s
+/// from each line. The [Element] list and any errors [ErrorInfo] can be
+/// obtained by providing a callback function to [onComplete].
 ///
-/// This parser follows the YES specification to identify and extract Elements
-/// from each line. The element list and any errors can be obtain by providing
-/// a callback function to `then((elements, errors) {})`.
+/// The parser can read asynchronously from a file using [YesParser.fromFile].
+/// To block and wait for the result, await [YesParser.join].
 ///
-/// The parser can read asynchronously from a file using `YesParser.fromFile()`
-/// To block and wait for the result, use `await parser.join()`
+/// The parser can read a document's contents using [YesParser.fromString].
+/// This constructor performs synchronously and does not need a call to [join].
 ///
-/// The parser can read from a String using `YesParser.fromString()`
-/// This constructor performs synchronously and does not need to join.
-///
-/// Additionally you can check the getter `isComplete` for true.
+/// Additionally you can check the status via the getter [isComplete].
 class YesParser {
-  final List<Element> _attrs = [];
-  final List<Element> _elements = [];
+  final List<Attribute> _attrs = [];
+  final List<ElementInfo> _elements = [];
   final List<ErrorInfo> _errors = [];
   int _lineCount = 0;
-  Thennable? _onComplete;
+  ParseCompleteFunc? _onComplete;
   late Future<void> _future;
   bool _isComplete = false;
 
+  /// If false, the parser is not finished. True otherwise.
   bool get isComplete {
     return _isComplete;
   }
@@ -67,14 +75,14 @@ class YesParser {
         .then((_) => _handleComplete());
   }
 
-  YesParser.fromString(String source) {
-    source.split('\n').forEach((line) => _handleLine(line));
+  YesParser.fromString(String contents) {
+    contents.split('\n').forEach((line) => _handleLine(line));
     _handleComplete();
     _future = Future.value();
   }
 
-  void then(Thennable value) {
-    _onComplete = value;
+  void onComplete(ParseCompleteFunc func) {
+    _onComplete = func;
   }
 
   Future<void> join() async {
@@ -102,16 +110,14 @@ class YesParser {
 
     switch (p.elementInfo.element.type) {
       case ElementType.attribute:
-        _attrs.add(p.elementInfo.element);
+        _attrs.add(p.elementInfo.element as Attribute);
         return;
       case ElementType.standard:
-        p.elementInfo.element.setAttributes(_attrs);
+        (p.elementInfo.element as Standard).setAttributes(_attrs);
         _attrs.clear();
-        break;
+        _elements.add(ElementInfo(_lineCount, p.elementInfo.element));
       case _:
-      /* fall-through */
+        _elements.add(ElementInfo(_lineCount, p.elementInfo.element));
     }
-
-    _elements.add(p.elementInfo.element);
   }
 }

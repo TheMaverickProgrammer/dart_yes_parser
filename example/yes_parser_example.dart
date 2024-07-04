@@ -6,18 +6,21 @@ import 'package:yes_parser/yes_parser.dart';
 
 void main() async {
   final p = YesParser.fromFile(File.fromUri(Uri.file("example/example.mesh")))
-    ..then(printAll);
+    ..onComplete(printAll);
 
   // Wait for parser to finish before ending program
   await p.join();
 }
 
-void printAll(List<Element> elements, List<ErrorInfo> errors) {
+void printAll(List<ElementInfo> elements, List<ErrorInfo> errors) {
   // Print every element
-  for (final el in elements) {
-    // Print every attribute this element has
-    for (final attr in el.attrs) {
-      print(attr);
+  for (final info in elements) {
+    final Element el = info.element;
+    // Print every attribute this standard element has
+    if (el.isStandard) {
+      for (final attr in (el as Standard).attrs) {
+        print(attr);
+      }
     }
     print(el);
   }

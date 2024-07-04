@@ -3,56 +3,64 @@ import 'dart:collection';
 import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
 
+/// [Element] is base of [Attribute], [Standard], [Global], and [Comment].
+/// It has a [text] field which is used directly by [Comment].
+/// The other types use alias [Attribute.name], [Standard.name], [Global.name].
+/// Elements have zero or more [args] where each entry is a [KeyVal] object.
+/// This base class exposes methods to [add], [upsert], and query keys.
+///
+/// [hasKey] and [hasKeys] return true iff this [Element]'s [args] have all
+/// key names passed into them. If any one fails, then the return is false.
+///
+/// [getKeyValue] returns [String]? and is the internal type of [KeyVal.val].
+/// [getKeyValueAsInt] returns 0 if not found or value [or] if provided.
+/// [getKeyValueAsBool] returns false if not found or value [or] if provided.
+/// [getKeyValueAsDouble] returns 0.0 if not found or value [or] if provided.
+///
+/// [toString] is overloaded to print the glyph, element name, and all [args].
 class Element {
   final String text;
   final ElementType type;
   final List<KeyVal> _args = [];
-  final List<Element> _attrs = [];
 
-  Element.standard(String label)
-      : type = ElementType.standard,
-        text = label;
+  // Private constructor
+  Element._(this.type, this.text);
 
-  Element.attribute(String label)
-      : type = ElementType.attribute,
-        text = label;
+  /// Create a standard element named [label];
+  factory Element.standard(String label) => Standard(label);
 
-  Element.global(String label)
-      : type = ElementType.global,
-        text = label;
+  /// Create an attribute element named [label]
+  factory Element.attribute(String label) =>
+      Attribute.from(Element._(ElementType.attribute, label));
 
-  Element.comment(this.text) : type = ElementType.comment;
+  /// Create a global element named [label]
+  factory Element.global(String label) =>
+      Global.from(Element._(ElementType.global, label));
 
-  /// Get immutable list of keyvalues
+  /// Create a line comment element from [text]
+  factory Element.comment(String text) =>
+      Comment.from(Element._(ElementType.comment, text));
+
+  // Shorthand type checks
+  bool get isStandard => type == ElementType.standard;
+  bool get isAttribute => type == ElementType.attribute;
+  bool get isGlobal => type == ElementType.global;
+  bool get isComment => type == ElementType.comment;
+
+  /// Get immutable list of [KeyVal]
   UnmodifiableListView<KeyVal> get args {
     return UnmodifiableListView(_args);
   }
 
-  /// Get immutable list of attributes embeded to this element
-  UnmodifiableListView<Element> get attrs {
-    return UnmodifiableListView(_attrs);
-  }
-
-  /// Overrides embeded attributes
-  void setAttributes(List<Element> attrs) {
-    _attrs.clear();
-    for (final a in attrs) {
-      if (a.type != ElementType.attribute) {
-        throw Exception('Element is not an attribute!');
-      }
-      _attrs.add(a);
-    }
-  }
-
-  /// Add a new keyvalue
+  /// Add a new [KeyVal]
   void add(KeyVal kv) {
     _args.add(kv);
   }
 
-  /// Finds and updates keyvalue by name
-  /// Or inserts if nameless
+  /// Finds and updates [KeyVal] by its [KeyVal.key]
+  /// Inserts if not found or [KeyVal.isNameless] is true.
   void upsert(KeyVal kv) {
-    final int idx = _args.indexWhere((el) => !el.isNameless && el == kv);
+    final int idx = _args.indexWhere((e) => !e.isNameless && e == kv);
 
     // Insert if no match was found
     if (idx == -1) {
@@ -64,7 +72,7 @@ class Element {
     _args[idx] = kv;
   }
 
-  /// Returns true if the element has a key of the matching name .
+  /// Returns true if the element has a [KeyVal] with the same [key].
   /// Case-insensitive.
   bool hasKey(String key) {
     final int idx =
@@ -72,7 +80,7 @@ class Element {
     return idx > -1;
   }
 
-  /// Returns true if the element has ALL keys of the same name.
+  /// Returns true if the element has ALL keys of the same key string.
   /// Useful for ensuring custom standard elements have all required keyvalues.
   /// Case-insensitive.
   bool hasKeys(List<String> keys) {
@@ -84,8 +92,8 @@ class Element {
     return true;
   }
 
-  /// Return value as String or null.
-  /// (Optional) `or` value when key is null or unable to parse.
+  /// Return [KeyVal.val] as String or null.
+  /// Optional [or] value when key is null or unable to parse.
   /// Case-insensitive.
   String? getKeyValue(String key, [String? or]) {
     final int idx =
@@ -100,8 +108,8 @@ class Element {
     return or;
   }
 
-  /// Return value as int.
-  /// (Optional) `or` value when key is null or unable to parse.
+  /// Return [KeyVal.val] as int.
+  /// Optional [or] value when key is null or unable to parse.
   /// Default behavior for null values is to return 0.
   /// Case-insensitive.
   int getKeyValueAsInt(String key, [int? or]) {
@@ -109,8 +117,8 @@ class Element {
     return int.tryParse(val ?? '') ?? or ?? 0;
   }
 
-  /// Return value as bool.
-  /// (Optional) `or` value when key is null or unable to parse.
+  /// Return [KeyVal.val] as bool.
+  /// Optional [or] value when key is null or unable to parse.
   /// Default behavior for null values is to return false.
   /// Case-insensitive.
   bool getKeyValueAsBool(String key, [bool? or]) {
@@ -118,8 +126,8 @@ class Element {
     return bool.tryParse(val ?? '') ?? or ?? false;
   }
 
-  /// Return value as double.
-  /// (Optional) `or` value when key is null or unable to parse.
+  /// Return [KeyVal.val] as double.
+  /// Optional [or] value when key is null or unable to parse.
   /// Default behavior for null values is to return 0.0.
   /// Case-insensitive.
   double getKeyValueAsDouble(String key, [double? or]) {
@@ -143,5 +151,56 @@ class Element {
     }
 
     return res;
+  }
+}
+
+/// [Attribute] extension type wraps [Element] to distinguish them.
+extension type Attribute._(Element _detail) implements Element {
+  /// [Attribute] elements have a [name].
+  String get name => text;
+
+  Attribute.from(Element element)
+      : assert(element.isAttribute, "Expected ElementType.Attribute"),
+        _detail = element;
+}
+
+/// [Global] extension type wraps [Element] to distinguish them.
+extension type Global._(Element _detail) implements Element {
+  /// [Global] elements have a [name].
+  String get name => text;
+
+  Global.from(Element element)
+      : assert(element.isGlobal, "Expected ElementType.Global"),
+        _detail = element;
+}
+
+/// [Comment] extension type wraps [Element] to distinguish them.
+extension type Comment._(Element _detail) implements Element {
+  Comment.from(Element element)
+      : assert(element.isComment, "Expected ElementType.Comment"),
+        _detail = element;
+}
+
+/// [Standard] elements are unique in that they carry metadata.
+final class Standard extends Element {
+  /// [Standard] elements have zero or more [Attribute]s.
+  final List<Attribute> _attrs = [];
+
+  /// [Standard] elements have a [name] field.
+  String get name => text;
+
+  /// Construct a new [Standard] object with a [name].
+  Standard(String name) : super._(ElementType.standard, name);
+
+  /// Get immutable list of attributes embeded to this element
+  UnmodifiableListView<Attribute> get attrs {
+    return UnmodifiableListView(_attrs);
+  }
+
+  /// Clears and replaces attributes with the incoming [List].
+  void setAttributes(List<Attribute> attrs) {
+    _attrs
+      ..clear()
+      ..addAll(attrs);
   }
 }
