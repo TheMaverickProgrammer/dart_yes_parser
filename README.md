@@ -40,4 +40,4 @@ which uses the YES scriplet spec.
 This project is licensed under the [Common Development and Distribution License (CDDL)][LEGAL].
 
 [SPEC]: https://github.com/TheMaverickProgrammer/dart_yes_parser/blob/master/spec/README.md
-[LEGAL]: https://github.com/TheMaverickProgrammer/dart_yes_parser/blob/master/legal/LICENSE.md
+[LEGAL]: https://github.com/TheMaverickProgrammer/dart_yes_parser/blob/master/LICENSE
