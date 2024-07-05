@@ -124,7 +124,20 @@ class Element {
   /// Case-insensitive.
   bool getKeyValueAsBool(String key, [bool? or]) {
     final val = getKeyValue(key);
-    return bool.tryParse(val ?? '') ?? or ?? false;
+
+    int? asInt;
+
+    if (val != null) {
+      asInt = int.tryParse(val);
+    }
+
+    if (asInt == null) {
+      // Value was not encoded as a number. Try boolean.
+      return bool.tryParse(val ?? '') ?? or ?? false;
+    }
+
+    // Any non-zero number is a truthy value while zero is false.
+    return asInt != 0;
   }
 
   /// Return [KeyVal.val] as double.
