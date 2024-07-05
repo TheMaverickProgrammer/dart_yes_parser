@@ -1,12 +1,11 @@
+/// Identifies which delimiter is used for parsing a line.
 enum Delimiters {
-  unset(0),
-  commaOnly(1),
-  spaceOnly(2);
-
-  final int value;
-  const Delimiters(this.value);
+  unset,
+  commaOnly,
+  spaceOnly;
 }
 
+/// Spec-compliant tokens. The token is stored in [symbol].
 enum ElementType {
   standard(''),
   attribute('@'),
@@ -17,6 +16,7 @@ enum ElementType {
   const ElementType(this.symbol);
 }
 
+/// Spec-reserved glyphs use while parsing. The character is stored in [char].
 enum Glyphs {
   none(''),
   equal('='),
@@ -31,6 +31,8 @@ enum Glyphs {
   const Glyphs(this.char);
 }
 
+/// Spec-specific [ErrorType]s with a [message].
+/// [ErrorType.runtime] is provided for implemntations that need custom errors.
 enum ErrorType {
   badTokenPosAttribute('Element using attribute prefix out-of-place.'),
   badTokenPosBang('Element using global prefix out-of-place.'),

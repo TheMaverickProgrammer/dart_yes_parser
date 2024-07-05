@@ -3,6 +3,7 @@ import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
 import 'package:yes_parser/src/element.dart';
 
+/// [ElementInfo] retains the [lineNumber] an [element] was parsed on.
 class ElementInfo {
   final Element element;
   final int lineNumber;
@@ -10,8 +11,8 @@ class ElementInfo {
   ElementInfo(this.lineNumber, this.element);
 }
 
-/// Parse the element from a line following the YES specification.
-/// Used internally by the YesParser.
+/// [ElementParser] parses the [elementInfo] from a line.
+/// Used internally.
 class ElementParser {
   Delimiters _delimiter = Delimiters.unset;
   Element? _element;

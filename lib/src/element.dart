@@ -1,9 +1,11 @@
 import 'dart:collection';
 
+import 'package:yes_parser/extensions.dart';
 import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
 
 /// [Element] is base of [Attribute], [Standard], [Global], and [Comment].
+///
 /// It has a [text] field which is used directly by [Comment].
 /// The other types use alias [Attribute.name], [Standard.name], [Global.name].
 /// Elements have zero or more [args] where each entry is a [KeyVal] object.
@@ -16,7 +18,6 @@ import 'package:yes_parser/src/enums.dart';
 /// [getKeyValueAsInt] returns 0 if not found or value [or] if provided.
 /// [getKeyValueAsBool] returns false if not found or value [or] if provided.
 /// [getKeyValueAsDouble] returns 0.0 if not found or value [or] if provided.
-///
 /// [toString] is overloaded to print the glyph, element name, and all [args].
 class Element {
   final String text;
@@ -101,7 +102,7 @@ class Element {
 
     // Found
     if (idx != -1) {
-      return _args[idx].val;
+      return _args[idx].val.unquote();
     }
 
     // Miss

@@ -1,11 +1,12 @@
-/// KeyVal
-/// String? key
-/// String val
-/// bool isNamesless
+/// [KeyVal] represents a [key] and its [String] value [val].
 ///
-/// KeyVal represent YES spec keyvalues.
-/// `key` can be null, representing Nameless Keyvalues.
-/// `val` is stored as a String internally.
+/// A [key] can be `null` and is called a nameless [KeyVal]. Such [KeyVal]s
+/// will return `true` for the getter [isNameless].
+///
+/// The data [val] is always stored internally as a [String] with any quotes
+/// read from the document. Quotes are stripped when the value is fetched
+/// by the Element class. If you expect quotes to be retained, use the
+/// [String] extensions provided by this package.
 class KeyVal {
   final String? key;
   final String val;

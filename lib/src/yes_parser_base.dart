@@ -6,8 +6,8 @@ import 'package:yes_parser/src/element_parser.dart';
 import 'package:yes_parser/src/enums.dart';
 
 /// [ErrorInfo] has the offending [line] and reason [message].
-/// [type] can be pattern matched with one of the hard-coded [ErrorType]s.
 ///
+/// [type] can be pattern matched with one of the hard-coded [ErrorType]s.
 /// Constructor [ErrorInfo.other] sets [type] to [ErrorType.runtime] which
 /// can be used for your own custom error [message]s.
 class ErrorInfo {
@@ -27,6 +27,7 @@ class ErrorInfo {
 }
 
 /// [ElementInfo] has the [line] which parsed it and the result [Element].
+///
 /// Knowing the [line] is useful because other parsers using this spec may need
 /// to raise additional errors if elements in their doc are missing specific
 /// [Standard.args] or have malformed values.
@@ -40,9 +41,10 @@ class ElementInfo {
 /// [ParseCompleteFunc] is for on-completed callbacks
 typedef ParseCompleteFunc = void Function(List<ElementInfo>, List<ErrorInfo>);
 
-/// This parser follows the YES sepc to identify and extract [Element]s
-/// from each line. The [Element] list and any errors [ErrorInfo] can be
-/// obtained by providing a callback function to [onComplete].
+/// This parser follows the YES spec to extract [Element]s from each line.
+///
+/// The [Element] list and any errors [ErrorInfo] can be obtained by providing
+/// a [ParseCompleteFunc] callback to any constructor.
 ///
 /// The parser can read asynchronously from a file using [YesParser.fromFile].
 /// To block and wait for the result, await [YesParser.join].
