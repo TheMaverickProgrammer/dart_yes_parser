@@ -1,3 +1,7 @@
+# 1.0.3
+
+- Missed or.unquote() for Element.getKeyValue() which affected all the other keyval getters. Fixed.
+
 # 1.0.2
 
 - Auto-strip quotes from KeyVal values for convenience. Added an extension to the lib to easy restore them if needed.
