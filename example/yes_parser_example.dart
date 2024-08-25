@@ -4,7 +4,7 @@ import 'package:yes_parser/yes_parser.dart';
 /// This example demonstrates how to parse a file using [YesParser]
 /// and how to digest [ElementInfo] and [ErrorInfo] after parsing.
 void main() async {
-  final File file = File.fromUri(Uri.file("example/example.mesh"));
+  final File file = File.fromUri(Uri.file("doc.mesh"));
 
   final p = YesParser.fromFile(
     file,
@@ -32,15 +32,6 @@ void printAll(List<ElementInfo> elements, List<ErrorInfo> errors) {
       for (final attr in (el as Standard).attrs) {
         print(attr);
       }
-
-      /*
-      // e.g. face texture = grass, name=f5
-      if (el.name == "face") {
-        final texture = el.getKeyValue("texture");
-        final name = el.getKeyValue("name");
-        // Do something with this data
-      }
-      */
     }
     print(el);
   }

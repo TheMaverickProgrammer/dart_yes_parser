@@ -12,7 +12,7 @@ These constructors require the callback function to be set via `.onComplete(...)
 Loading by file is asynchronous and must be waited on for completion
 ```dart
 void main() async {
-  final p = YesParser.fromFile(File.fromUri(Uri.file("example.mesh")), onComplete: onComplete);
+  final p = YesParser.fromFile(File.fromUri(Uri.file("doc.mesh")), onComplete: onComplete);
 
   // Wait for parser to finish before ending program
   await p.join();
@@ -31,8 +31,8 @@ void onComplete(List<ElementInfo> elements, List<ErrorInfo> errors) { ... }
 ```
 
 See the [example](./example/yes_parser_example.dart) to learn how to access
-element types and their data from a [mesh file format](./example/example.mesh)
-which uses the YES scriplet spec.
+element types and their data from an example [3D format](./example/doc.mesh)
+which uses the spec.
 
 ## License
 This project is licensed under the [Common Development and Distribution License (CDDL)][LEGAL].

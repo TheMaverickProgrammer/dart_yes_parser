@@ -208,7 +208,15 @@ class ElementParser {
       final int spacePos = input.indexOf(Glyphs.space.char, current);
       final int commaPos = input.indexOf(Glyphs.comma.char, current);
 
-      if (quotePos > -1 && quotePos < spacePos && quotePos < commaPos) {
+      if (spacePos > -1 && quotePos > spacePos) {
+        quotePos = -1;
+      }
+
+      if (commaPos > -1 && quotePos > commaPos) {
+        quotePos = -1;
+      }
+
+      if (quotePos > -1) {
         quoted = true;
         start = quotePos;
         current = start + 1;
