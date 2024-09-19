@@ -121,6 +121,8 @@ class Element {
   /// Return [KeyVal.val] as bool.
   /// Optional [or] value when key is null or unable to parse.
   /// Default behavior for null values is to return false.
+  /// If a number is provided, 0 is false, and everything else is true.
+  /// If a string is provided, it will be compared to "true".
   /// Case-insensitive.
   bool getKeyValueAsBool(String key, [bool? or]) {
     final val = getKeyValue(key);
@@ -133,7 +135,7 @@ class Element {
 
     if (asInt == null) {
       // Value was not encoded as a number. Try boolean.
-      return bool.tryParse(val ?? '') ?? or ?? false;
+      return bool.tryParse(val ?? '', caseSensitive: false) ?? or ?? false;
     }
 
     // Any non-zero number is a truthy value while zero is false.

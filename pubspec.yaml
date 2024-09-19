@@ -7,7 +7,7 @@ description:
   provide external functionality to their own software easily and quickly
   at no cost to readability or flexibility. It is a format for everyone.
 
-version: 1.0.3
+version: 1.0.4
 repository: https://github.com/TheMaverickProgrammer/dart_yes_parser
 
 environment:
