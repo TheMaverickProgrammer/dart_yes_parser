@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:yes_parser/extensions.dart';
 import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
 import 'package:yes_parser/src/element.dart';
@@ -119,7 +120,7 @@ class ElementParser {
       end = min(len, idx);
     }
 
-    final String name = line.substring(pos, end);
+    final String name = line.substring(pos, end).unquote();
     if (name.isEmpty) {
       ErrorType errorType = ErrorType.eolMissingElement;
 
@@ -205,8 +206,7 @@ class ElementParser {
         continue;
       }
 
-      assert(!quoted && quotePos == -1,
-          'Parser has unterminated quote without an early exit.');
+      assert(!quoted, 'Parser has unterminated quote without an early exit.');
 
       final int spacePos = input.indexOf(Glyphs.space.char, current);
       final int commaPos = input.indexOf(Glyphs.comma.char, current);
@@ -319,15 +319,16 @@ class ElementParser {
     // Should never happen
     assert(_element != null, 'Element was not initialized.');
 
-    // Trim white spaces around the equal symbol
+    // Trim white spaces around the token for key-val
+    // assignments. e.g. `key=val`
     final String token = input.substring(start, end).trim();
 
-    // Named kay values are seperated by equals tokens
+    // Named key values are seperated by equal (=) tokens
     final int equalPos = token.indexOf(Glyphs.equal.char);
     if (equalPos != -1) {
       final KeyVal kv = KeyVal(
-        key: token.substring(0, equalPos).trim(),
-        val: token.substring(equalPos + 1, token.length).trim(),
+        key: token.substring(0, equalPos).trim().unquote(),
+        val: token.substring(equalPos + 1, token.length).trim().unquote(),
       );
 
       _element?.upsert(kv);
@@ -335,7 +336,7 @@ class ElementParser {
     }
 
     // Nameless key value
-    final KeyVal kv = KeyVal(val: token);
+    final KeyVal kv = KeyVal(val: token.unquote());
     _element?.add(kv);
   }
 

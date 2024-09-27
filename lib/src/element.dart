@@ -102,11 +102,11 @@ class Element {
 
     // Found
     if (idx != -1) {
-      return _args[idx].val.unquote();
+      return _args[idx].val;
     }
 
     // Miss
-    return or?.unquote();
+    return or;
   }
 
   /// Return [KeyVal.val] as int.
