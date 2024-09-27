@@ -24,7 +24,7 @@ ParseCompleteFunc checkDelimeterClosure(
 }
 
 ParseCompleteFunc checkArgsClosure(
-    {required List<List<KeyVal>> values,
+    {required List<List<KeyVal?>> values,
     List<String>? expectedErrors,
     dynamic matcher}) {
   return (List<ElementInfo> elements, List<ErrorInfo> errors) {
@@ -40,10 +40,11 @@ ParseCompleteFunc checkArgsClosure(
     final int len = values.length;
     for (int i = 0; i < len; i++) {
       final Element el = elements[i].element;
-      final List<KeyVal> args = values[i];
+      final List<KeyVal?> args = values[i];
 
       final int argLen = args.length;
-      expect(el.args.length, argLen, reason: 'Parsed args length is incorrect');
+      expect(el.args.length, argLen,
+          reason: 'Parsed args length is incorrect for i=$i');
 
       for (int j = 0; j < argLen; j++) {
         expect(el.args[j], matcher?.call(args[j]) ?? args[j],
@@ -80,7 +81,7 @@ void main() {
 
     const expected = <String>[
       'a key=val',
-      'b val val2',
+      'b val, val2',
       'c val',
       'd key=val',
       'e key=val',
@@ -136,7 +137,7 @@ void main() {
 
     final expected = <List<KeyVal>>[
       [KeyVal(key: 'key', val: 'val')],
-      [KeyVal(val: 'val val2')],
+      [KeyVal(val: 'val'), KeyVal(val: 'val2')],
       [KeyVal(val: 'val')],
       [KeyVal(key: 'key', val: 'val')],
       [KeyVal(key: 'key', val: 'val')],
@@ -188,17 +189,19 @@ void main() {
       'f key = val aaa bbb',
       'g key = val ,',
       'i key = val , val2    ,',
+      'j val val2 val3',
     ];
 
-    final isNotExpected = <List<KeyVal>>[
+    final isNotExpected = <List<KeyVal?>>[
       [KeyVal(key: 'key', val: '')],
-      [KeyVal(val: 'val')],
+      [KeyVal(val: 'val val2'), null],
       [KeyVal(val: 'val ')],
       [KeyVal(key: 'key', val: ' val')],
       [KeyVal(val: 'val')],
       [KeyVal(key: 'key', val: 'val aaa')],
       [KeyVal(key: 'key', val: 'val ')],
       [KeyVal(key: 'k', val: 'v'), KeyVal(val: 'val2    ')],
+      [KeyVal(val: 'val val2 val3'), null, null],
     ];
 
     final p = YesParser.fromString(

@@ -245,7 +245,7 @@ class ElementParser {
     // since it is the case when it is obvious there are no other
     // arguments to parse.
 
-    int space = -1, equal = -1, quote = -1;
+    int space = -1, equal = -1, quote = -1, equalCount = 0;
     while (!isDelimiterSet && current < len) {
       final String c = input[current];
       final bool isComma = Glyphs.comma.char == c;
@@ -258,12 +258,18 @@ class ElementParser {
         break;
       }
 
-      if (isSpace && space == -1) {
-        space = current;
-      }
+      if (quote == -1) {
+        if (isSpace && space == -1) {
+          space = current;
+        }
 
-      if (isEqual && equal == -1 && quote == -1) {
-        equal = current;
+        if (isEqual) {
+          if (equal == -1) {
+            equal = current;
+          }
+
+          equalCount++;
+        }
       }
 
       // Ensure quotes are toggled, if token was reached
@@ -278,17 +284,21 @@ class ElementParser {
       current++;
     }
 
-    // EOL with no delimiter found
+    // EOL with no comma delimiter found
     if (!isDelimiterSet) {
-      // No space token found so there is not other delimiter.
+      // No space token found so there is no other delimiter.
       // Spaces will be used.
       if (space == -1) {
         return len;
+      } else if (equalCount == 1) {
+        // Step #2 edge case: no delimiter was found
+        // and only **one** key provided, which means
+        // the key-value pair is likely to be surrounded by
+        // whitespace and should be permitted.
+        setDelimiterType(Delimiters.comma);
+      } else {
+        setDelimiterType(Delimiters.space);
       }
-
-      // Otherwise spaces were found and there must be no other
-      // arguments to delimit, so we choose comma for Step #2 edge-case.
-      setDelimiterType(Delimiters.comma);
 
       // Go back to the first space token
       current = space;
