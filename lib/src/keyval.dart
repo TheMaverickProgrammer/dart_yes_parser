@@ -24,4 +24,14 @@ class KeyVal {
 
     return '${key!}=$val';
   }
+
+  @override
+  int get hashCode => Object.hash(key.hashCode, val.hashCode);
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! KeyVal) return false;
+
+    return other.key == key && other.val == val;
+  }
 }

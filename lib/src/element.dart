@@ -153,7 +153,7 @@ class Element {
 
   @override
   String toString() {
-    return "${type.symbol}$text ${_printArgs()}";
+    return "${type.symbol}$text${_args.isNotEmpty ? ' ' : ''}${_printArgs()}";
   }
 
   String _printArgs() {

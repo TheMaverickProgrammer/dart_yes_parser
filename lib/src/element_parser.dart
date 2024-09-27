@@ -33,8 +33,8 @@ class ElementParser {
 
   String get delimiter {
     return switch (_delimiter) {
-      Delimiters.commaOnly => Glyphs.comma.char,
-      Delimiters.spaceOnly => Glyphs.space.char,
+      Delimiters.comma => Glyphs.comma.char,
+      Delimiters.space => Glyphs.space.char,
       _ => Glyphs.none.char,
     };
   }
@@ -205,6 +205,9 @@ class ElementParser {
         continue;
       }
 
+      assert(!quoted && quotePos == -1,
+          'Parser has unterminated quote without an early exit.');
+
       final int spacePos = input.indexOf(Glyphs.space.char, current);
       final int commaPos = input.indexOf(Glyphs.comma.char, current);
 
@@ -221,9 +224,6 @@ class ElementParser {
         start = quotePos;
         current = start + 1;
         continue;
-      } else if (spacePos == commaPos) {
-        // edge case: end of line read
-        return len;
       }
 
       // Use the first (nearest) valid delimiter
@@ -237,9 +237,14 @@ class ElementParser {
       break;
     }
 
-    // Step 2: determine delimiter if not yet set
-    // by scanning white spaces in search for the first comma
-    // or falling back to spaces if not found
+    // Step 2: assign delimiter if not yet set
+    // by scanning white spaces in search for the first comma.
+    //
+    // If EOL is reached, comma is chosen to be the delimiter so that
+    // tokens with one KeyVal argument can have spaces around it,
+    // since it is the case when it is obvious there are no other
+    // arguments to parse.
+
     int space = -1, equal = -1, quote = -1;
     while (!isDelimiterSet && current < len) {
       final String c = input[current];
@@ -249,7 +254,7 @@ class ElementParser {
       final bool isQuote = Glyphs.quote.char == c;
 
       if (isComma) {
-        setDelimiterType(Delimiters.commaOnly);
+        setDelimiterType(Delimiters.comma);
         break;
       }
 
@@ -275,13 +280,16 @@ class ElementParser {
 
     // EOL with no delimiter found
     if (!isDelimiterSet) {
-      // No space token found.
-      // Nothing to parse. Abort.
+      // No space token found so there is not other delimiter.
+      // Spaces will be used.
       if (space == -1) {
         return len;
       }
 
-      setDelimiterType(Delimiters.spaceOnly);
+      // Otherwise spaces were found and there must be no other
+      // arguments to delimit, so we choose comma for Step #2 edge-case.
+      setDelimiterType(Delimiters.comma);
+
       // Go back to the first space token
       current = space;
     }
