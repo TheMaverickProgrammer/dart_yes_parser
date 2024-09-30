@@ -84,6 +84,7 @@ void main() {
       't key=val key2=val2 key3=val3',
       'u "aaa bbb"',
       '"v" abcd',
+      'w x y z="123"',
     ];
 
     const expected = <String>[
@@ -108,7 +109,8 @@ void main() {
       's val, val2, val3',
       't key=val, key2=val2, key3=val3',
       'u "aaa bbb"',
-      'v abcd'
+      'v abcd',
+      'w x, y, z=123',
     ];
 
     final p = YesParser.fromString(
@@ -172,7 +174,8 @@ void main() {
       's val val2 val3',
       't key=val key2=val2 key3=val3',
       'u "aaa bbb"',
-      'v "crab battle" "efficient car goose" "key3"="value3" "key4"=value4 value5 "value6"'
+      'v "crab battle" "efficient car goose" "key3"="value3" "key4"=value4 value5 "value6"',
+      'w x y z="123"',
     ];
 
     final expected = <List<KeyVal>>[
@@ -217,6 +220,11 @@ void main() {
         KeyVal(val: 'value5'),
         KeyVal(val: 'value6'),
       ],
+      [
+        KeyVal(val: 'x'),
+        KeyVal(val: 'y'),
+        KeyVal(key: 'z', val: '123'),
+      ],
     ];
 
     final p = YesParser.fromString(
@@ -239,6 +247,7 @@ void main() {
       'g key = val ,',
       'i key = val , val2    ,',
       'j val val2 val3',
+      'w x y z="123"',
     ];
 
     final isNotExpected = <List<KeyVal?>>[
@@ -251,6 +260,11 @@ void main() {
       [KeyVal(key: 'key', val: 'val ')],
       [KeyVal(key: 'k', val: 'v'), KeyVal(val: 'val2    ')],
       [KeyVal(val: 'val val2 val3'), null, null],
+      [
+        KeyVal(key: 'x y z', val: '123'),
+        null,
+        null,
+      ],
     ];
 
     final p = YesParser.fromString(

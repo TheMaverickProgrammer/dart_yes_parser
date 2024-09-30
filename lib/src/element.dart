@@ -1,6 +1,5 @@
 import 'dart:collection';
 
-import 'package:yes_parser/extensions.dart';
 import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
 

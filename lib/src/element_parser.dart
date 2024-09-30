@@ -226,14 +226,18 @@ class ElementParser {
         continue;
       }
 
-      // Use the first (nearest) valid delimiter
-      if (spacePos == -1 && commaPos > -1) {
-        current = commaPos;
-      } else if (spacePos > -1 && commaPos == -1) {
-        current = spacePos;
-      } else if (spacePos > -1 && commaPos > -1) {
-        current = min(spacePos, commaPos);
-      }
+      // 09/30/2024 @ Mav this impatiently skips first potential
+      // valid token. All tests pass without it.
+      //
+      // // Use the first (nearest) valid delimiter
+      // if (spacePos == -1 && commaPos > -1) {
+      //   current = commaPos;
+      // } else if (spacePos > -1 && commaPos == -1) {
+      //   current = spacePos;
+      // } else if (spacePos > -1 && commaPos > -1) {
+      //   current = min(spacePos, commaPos);
+      // }
+      // break;
       break;
     }
 
@@ -245,7 +249,10 @@ class ElementParser {
     // since it is the case when it is obvious there are no other
     // arguments to parse.
 
-    int space = -1, equal = -1, quote = -1, equalCount = 0;
+    int space = -1, equal = -1, quote = -1;
+    int equalCount = 0, tokensBwSpaces = 0;
+    bool tokenWalk = false;
+
     while (!isDelimiterSet && current < len) {
       final String c = input[current];
       final bool isComma = Glyphs.comma.char == c;
@@ -258,12 +265,22 @@ class ElementParser {
         break;
       }
 
+      if (!isSpace && !isEqual && !isQuote && equal == -1) {
+        if (!tokenWalk) {
+          tokensBwSpaces++;
+        }
+        tokenWalk = true;
+      } else if (isSpace) {
+        tokenWalk = false;
+      }
+
       if (quote == -1) {
         if (isSpace && space == -1) {
           space = current;
         }
 
         if (isEqual) {
+          tokenWalk = false;
           if (equal == -1) {
             equal = current;
           }
@@ -290,7 +307,7 @@ class ElementParser {
       // Spaces will be used.
       if (space == -1) {
         return len;
-      } else if (equalCount == 1) {
+      } else if (equalCount == 1 && tokensBwSpaces == 1) {
         // Step #2 edge case: no delimiter was found
         // and only **one** key provided, which means
         // the key-value pair is likely to be surrounded by
