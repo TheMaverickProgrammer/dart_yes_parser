@@ -95,6 +95,14 @@ class YesParser {
   }
 
   void _handleComplete() {
+    // Hoist globals to the top of the list in order they were entered
+    _elements.sort((a, b) => switch ((a.element.type, b.element.type)) {
+          (ElementType.global, ElementType.global) => a.line.compareTo(b.line),
+          (ElementType.global, _) => -1,
+          (_, ElementType.global) => 1,
+          (_, _) => a.line.compareTo(b.line)
+        });
+
     _onComplete.call(_elements, _errors);
     _isComplete = true;
   }

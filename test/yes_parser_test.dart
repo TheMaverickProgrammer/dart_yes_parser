@@ -7,15 +7,23 @@ ParseCompleteFunc checkDelimeterClosure(
     required List<String> values,
     List<String>? expectedErrors}) {
   return (List<ElementInfo> elements, List<ErrorInfo> errors) {
-    //print(elements.map((e) => e.element));
-
-    assert(values.length == elements.length,
-        '[$testName] Expected elements and test values to be equal.\nWas: ${elements.length}.\nExpected: ${values.length})');
+    expect(
+      values.length,
+      elements.length,
+      reason: '[$testName] Expected elements and test values to be equal.'
+          '\nWas: ${elements.length}. Expected: ${values.length})',
+    );
 
     if (expectedErrors != null) {
-      assert(expectedErrors.length == errors.length,
-          '[$testName] Expected to have the same number of errors as values.\nWas: ${errors.length}.\nExpected: ${expectedErrors.length}');
+      expect(
+        expectedErrors.length,
+        errors.length,
+        reason:
+            '[$testName] Expected to have the same number of errors as values.'
+            '\nWas: ${errors.length}. Expected: ${expectedErrors.length}',
+      );
     }
+
     final int len = values.length;
     for (int i = 0; i < len; i++) {
       final Element el = elements[i].element;
@@ -32,28 +40,65 @@ ParseCompleteFunc checkArgsClosure(
     List<String>? expectedErrors,
     dynamic matcher}) {
   return (List<ElementInfo> elements, List<ErrorInfo> errors) {
-    //print(elements.map((e) => e.element));
-
-    assert(values.length == elements.length,
-        '[$testName] Expected elements and test values to be equal.\nWas: ${elements.length}.\nExpected: ${values.length})');
+    expect(
+      values.length,
+      elements.length,
+      reason: '[$testName] Expected elements and test values to be equal.'
+          '\nWas: ${elements.length}. Expected: ${values.length})',
+    );
 
     if (expectedErrors != null) {
-      assert(expectedErrors.length == errors.length,
-          '[$testName] Expected to have the same number of errors as values.\nWas: ${errors.length}.\nExpected: ${expectedErrors.length}');
+      expect(
+        expectedErrors.length,
+        errors.length,
+        reason:
+            '[$testName] Expected to have the same number of errors as values.'
+            '\nWas: ${errors.length}. Expected: ${expectedErrors.length}',
+      );
     }
+
     final int len = values.length;
     for (int i = 0; i < len; i++) {
       final Element el = elements[i].element;
       final List<KeyVal?> args = values[i];
 
       final int argLen = args.length;
-      expect(el.args.length, argLen,
-          reason: '[$testName] Parsed args length is incorrect for i=$i');
 
-      for (int j = 0; j < argLen; j++) {
-        expect(el.args[j], matcher?.call(args[j]) ?? args[j],
+      // These two DO NOT match in length. Pass early so not to
+      // throw an exception when testing for failures.
+      if (matcher == isNot && el.args.length != argLen) continue;
+
+      expect(
+        el.args.length,
+        argLen,
+        reason:
+            '[$testName] Parsed args length is incorrect for element=${el.text}',
+      );
+
+      if (matcher == isNot) {
+        // Make sure at least one arg does not match
+        bool oneFailed = false;
+        for (int j = 0; j < argLen; j++) {
+          if (el.args[j] == args[j]) continue;
+          oneFailed = true;
+          break;
+        }
+        expect(
+          oneFailed,
+          true,
+          reason:
+              '[$testName] Was not expecting all args to be the same for element ${el.text}',
+        );
+      } else {
+        // Make sure every arg matches!
+        for (int j = 0; j < argLen; j++) {
+          expect(
+            el.args[j],
+            matcher?.call(args[j]) ?? args[j],
             reason:
-                '[$testName] Parsed KeyVal elements[$i] had unexpected args[$j] value');
+                '[$testName] Parsed KeyVal for element ${el.text} had unexpected args[$j] value',
+          );
+        }
       }
     }
   };
@@ -67,7 +112,7 @@ void main() {
       'c val',
       'd key=val',
       'e key = val,',
-      'f key = val,',
+      'f key= val aaa bbb',
       'g key = val aaa bbb',
       'h key = val ,',
       'i key = val,key2=val2',
@@ -85,6 +130,7 @@ void main() {
       'u "aaa bbb"',
       '"v" abcd',
       'w x y z="123"',
+      'x a=b -c',
     ];
 
     const expected = <String>[
@@ -93,8 +139,8 @@ void main() {
       'c val',
       'd key=val',
       'e key=val',
-      'f key=val',
-      'g key="val aaa bbb"',
+      'f key=, val, aaa, bbb',
+      'g key, val, aaa, bbb',
       'h key=val',
       'i key=val, key2=val2',
       'j key=val, key2=val2',
@@ -111,6 +157,7 @@ void main() {
       'u "aaa bbb"',
       'v abcd',
       'w x, y, z=123',
+      'x a=b, -c',
     ];
 
     final p = YesParser.fromString(
@@ -158,7 +205,7 @@ void main() {
       'c val',
       'd key=val',
       'e key = val,',
-      'f key = val,',
+      'f key= val aaa bbb',
       'g key = val aaa bbb',
       'h key = val ,',
       'i key = val,key2=val2',
@@ -176,6 +223,7 @@ void main() {
       'u "aaa bbb"',
       'v "crab battle" "efficient car goose" "key3"="value3" "key4"=value4 value5 "value6"',
       'w x y z="123"',
+      'x a=b -c',
     ];
 
     final expected = <List<KeyVal>>[
@@ -184,8 +232,18 @@ void main() {
       [KeyVal(val: 'val')],
       [KeyVal(key: 'key', val: 'val')],
       [KeyVal(key: 'key', val: 'val')],
-      [KeyVal(key: 'key', val: 'val')],
-      [KeyVal(key: 'key', val: 'val aaa bbb')],
+      [
+        KeyVal(key: 'key', val: ''),
+        KeyVal(val: 'val'),
+        KeyVal(val: 'aaa'),
+        KeyVal(val: 'bbb')
+      ],
+      [
+        KeyVal(val: 'key'),
+        KeyVal(val: 'val'),
+        KeyVal(val: 'aaa'),
+        KeyVal(val: 'bbb')
+      ],
       [KeyVal(key: 'key', val: 'val')],
       [KeyVal(key: 'key', val: 'val'), KeyVal(key: 'key2', val: 'val2')],
       [KeyVal(key: 'key', val: 'val'), KeyVal(key: 'key2', val: 'val2')],
@@ -225,6 +283,7 @@ void main() {
         KeyVal(val: 'y'),
         KeyVal(key: 'z', val: '123'),
       ],
+      [KeyVal(key: 'a', val: 'b'), KeyVal(val: '-c')],
     ];
 
     final p = YesParser.fromString(
@@ -252,18 +311,21 @@ void main() {
 
     final isNotExpected = <List<KeyVal?>>[
       [KeyVal(key: 'key', val: '')],
-      [KeyVal(val: 'val val2'), null],
+      [KeyVal(val: 'val val2')],
       [KeyVal(val: 'val ')],
       [KeyVal(key: 'key', val: ' val')],
       [KeyVal(val: 'val')],
-      [KeyVal(key: 'key', val: 'val aaa')],
+      [
+        KeyVal(val: 'key='),
+        KeyVal(val: 'val'),
+        KeyVal(val: 'aaa'),
+        KeyVal(val: 'bbb')
+      ],
       [KeyVal(key: 'key', val: 'val ')],
       [KeyVal(key: 'k', val: 'v'), KeyVal(val: 'val2    ')],
-      [KeyVal(val: 'val val2 val3'), null, null],
+      [KeyVal(val: 'val val2 val3')],
       [
         KeyVal(key: 'x y z', val: '123'),
-        null,
-        null,
       ],
     ];
 
@@ -271,6 +333,45 @@ void main() {
       doc.join('\n'),
       onComplete: checkArgsClosure(
           testName: 'Sanity Check', values: isNotExpected, matcher: isNot),
+    );
+
+    // Wait for parser to finish before ending program
+    await p.join();
+  });
+
+  test("Globals are hoisted to the top in the output element list", () async {
+    const doc = <String>[
+      '1 key=val',
+      '!a key=val',
+      '2 val val',
+      '!b',
+      '3 key=val key2=val',
+      '4 key=val',
+      '!c val val key=val',
+      '!d val, val',
+      '5 key=val',
+      '6 key=val',
+      '!e key=val',
+    ];
+
+    const expected = <String>[
+      '!a key=val',
+      '!b',
+      '!c val, val, key=val',
+      '!d val, val',
+      '!e key=val',
+      '1 key=val',
+      '2 val, val',
+      '3 key=val, key2=val',
+      '4 key=val',
+      '5 key=val',
+      '6 key=val',
+    ];
+
+    final p = YesParser.fromString(
+      doc.join('\n'),
+      onComplete: checkDelimeterClosure(
+          testName: 'Globals Hoist Test', values: expected),
     );
 
     // Wait for parser to finish before ending program

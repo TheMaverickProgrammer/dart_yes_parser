@@ -226,18 +226,6 @@ class ElementParser {
         continue;
       }
 
-      // 09/30/2024 @ Mav this impatiently skips first potential
-      // valid token. All tests pass without it.
-      //
-      // // Use the first (nearest) valid delimiter
-      // if (spacePos == -1 && commaPos > -1) {
-      //   current = commaPos;
-      // } else if (spacePos > -1 && commaPos == -1) {
-      //   current = spacePos;
-      // } else if (spacePos > -1 && commaPos > -1) {
-      //   current = min(spacePos, commaPos);
-      // }
-      // break;
       break;
     }
 
@@ -250,7 +238,8 @@ class ElementParser {
     // arguments to parse.
 
     int space = -1, equal = -1, quote = -1;
-    int equalCount = 0, tokensBwSpaces = 0;
+    int equalCount = 0, spacesBfEq = 0, spacesAfEq = 0;
+    int tokensBfEq = 0, tokensAfEq = 0;
     bool tokenWalk = false;
 
     while (!isDelimiterSet && current < len) {
@@ -265,12 +254,21 @@ class ElementParser {
         break;
       }
 
-      if (!isSpace && !isEqual && !isQuote && equal == -1) {
+      if (!isSpace && !isEqual && !isQuote) {
+        // The leading equals char determines how the rest of the document
+        // will be parsed when no comma delimiter is set
         if (!tokenWalk) {
-          tokensBwSpaces++;
+          (equal == -1) ? tokensBfEq++ : tokensAfEq++;
         }
+
         tokenWalk = true;
+        // Clear counted spaces
+        (equal == -1) ? spacesBfEq = 0 : spacesAfEq = 0;
       } else if (isSpace) {
+        if (tokenWalk) {
+          // Count spaces before and after equals char
+          (equal == -1) ? spacesBfEq++ : spacesAfEq++;
+        }
         tokenWalk = false;
       }
 
@@ -301,13 +299,20 @@ class ElementParser {
       current++;
     }
 
+    // Edge case: one key-value pair can have spaces around them
+    // while being parsed correctly
+    final bool oneTokenExists = equalCount == 1 &&
+        tokensBfEq == 1 &&
+        tokensAfEq <= 1 &&
+        (spacesBfEq - spacesAfEq).abs() <= 1;
+
     // EOL with no comma delimiter found
     if (!isDelimiterSet) {
       // No space token found so there is no other delimiter.
       // Spaces will be used.
       if (space == -1) {
         return len;
-      } else if (equalCount == 1 && tokensBwSpaces == 1) {
+      } else if (oneTokenExists) {
         // Step #2 edge case: no delimiter was found
         // and only **one** key provided, which means
         // the key-value pair is likely to be surrounded by
@@ -340,7 +345,11 @@ class ElementParser {
     // assignments. e.g. `key=val`
     final String token = input.substring(start, end).trim();
 
-    // Named key values are seperated by equal (=) tokens
+    // Edge case: token is just the equal char
+    // Treat this as no key and no value
+    if (token == Glyphs.equal.char) return;
+
+    // Named key values are seperated by equal (=) char
     final int equalPos = token.indexOf(Glyphs.equal.char);
     if (equalPos != -1) {
       final KeyVal kv = KeyVal(
