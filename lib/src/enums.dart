@@ -1,8 +1,8 @@
 /// Identifies which delimiter is used for parsing a line.
 enum Delimiters {
   unset,
-  commaOnly,
-  spaceOnly;
+  comma,
+  space;
 }
 
 /// Spec-compliant tokens. The token is stored in [symbol].

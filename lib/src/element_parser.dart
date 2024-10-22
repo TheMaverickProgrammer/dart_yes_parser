@@ -1,15 +1,8 @@
 import 'dart:math';
+import 'package:yes_parser/extensions.dart';
 import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
 import 'package:yes_parser/src/element.dart';
-
-/// [ElementInfo] retains the [lineNumber] an [element] was parsed on.
-class ElementInfo {
-  final Element element;
-  final int lineNumber;
-
-  ElementInfo(this.lineNumber, this.element);
-}
 
 /// [ElementParser] parses the [elementInfo] from a line.
 /// Used internally.
@@ -33,8 +26,8 @@ class ElementParser {
 
   String get delimiter {
     return switch (_delimiter) {
-      Delimiters.commaOnly => Glyphs.comma.char,
-      Delimiters.spaceOnly => Glyphs.space.char,
+      Delimiters.comma => Glyphs.comma.char,
+      Delimiters.space => Glyphs.space.char,
       _ => Glyphs.none.char,
     };
   }
@@ -119,7 +112,7 @@ class ElementParser {
       end = min(len, idx);
     }
 
-    final String name = line.substring(pos, end);
+    final String name = line.substring(pos, end).unquote();
     if (name.isEmpty) {
       ErrorType errorType = ErrorType.eolMissingElement;
 
@@ -205,6 +198,8 @@ class ElementParser {
         continue;
       }
 
+      assert(!quoted, 'Parser has unterminated quote without an early exit.');
+
       final int spacePos = input.indexOf(Glyphs.space.char, current);
       final int commaPos = input.indexOf(Glyphs.comma.char, current);
 
@@ -221,26 +216,24 @@ class ElementParser {
         start = quotePos;
         current = start + 1;
         continue;
-      } else if (spacePos == commaPos) {
-        // edge case: end of line read
-        return len;
       }
 
-      // Use the first (nearest) valid delimiter
-      if (spacePos == -1 && commaPos > -1) {
-        current = commaPos;
-      } else if (spacePos > -1 && commaPos == -1) {
-        current = spacePos;
-      } else if (spacePos > -1 && commaPos > -1) {
-        current = min(spacePos, commaPos);
-      }
       break;
     }
 
-    // Step 2: determine delimiter if not yet set
-    // by scanning white spaces in search for the first comma
-    // or falling back to spaces if not found
+    // Step 2: assign delimiter if not yet set
+    // by scanning white spaces in search for the first comma.
+    //
+    // If EOL is reached, comma is chosen to be the delimiter so that
+    // tokens with one KeyVal argument can have spaces around it,
+    // since it is the case when it is obvious there are no other
+    // arguments to parse.
+
     int space = -1, equal = -1, quote = -1;
+    int equalCount = 0, spacesBfEq = 0, spacesAfEq = 0;
+    int tokensBfEq = 0, tokensAfEq = 0;
+    bool tokenWalk = false;
+
     while (!isDelimiterSet && current < len) {
       final String c = input[current];
       final bool isComma = Glyphs.comma.char == c;
@@ -249,16 +242,41 @@ class ElementParser {
       final bool isQuote = Glyphs.quote.char == c;
 
       if (isComma) {
-        setDelimiterType(Delimiters.commaOnly);
+        setDelimiterType(Delimiters.comma);
         break;
       }
 
-      if (isSpace && space == -1) {
-        space = current;
+      if (!isSpace && !isEqual && !isQuote) {
+        // The leading equals char determines how the rest of the document
+        // will be parsed when no comma delimiter is set
+        if (!tokenWalk) {
+          (equal == -1) ? tokensBfEq++ : tokensAfEq++;
+        }
+
+        tokenWalk = true;
+        // Clear counted spaces
+        (equal == -1) ? spacesBfEq = 0 : spacesAfEq = 0;
+      } else if (isSpace) {
+        if (tokenWalk) {
+          // Count spaces before and after equals char
+          (equal == -1) ? spacesBfEq++ : spacesAfEq++;
+        }
+        tokenWalk = false;
       }
 
-      if (isEqual && equal == -1 && quote == -1) {
-        equal = current;
+      if (quote == -1) {
+        if (isSpace && space == -1) {
+          space = current;
+        }
+
+        if (isEqual) {
+          tokenWalk = false;
+          if (equal == -1) {
+            equal = current;
+          }
+
+          equalCount++;
+        }
       }
 
       // Ensure quotes are toggled, if token was reached
@@ -273,15 +291,29 @@ class ElementParser {
       current++;
     }
 
-    // EOL with no delimiter found
+    // Edge case: one key-value pair can have spaces around them
+    // while being parsed correctly
+    final bool oneTokenExists = equalCount == 1 &&
+        tokensBfEq == 1 &&
+        tokensAfEq <= 1 &&
+        (spacesBfEq - spacesAfEq).abs() <= 1;
+
+    // EOL with no comma delimiter found
     if (!isDelimiterSet) {
-      // No space token found.
-      // Nothing to parse. Abort.
+      // No space token found so there is no other delimiter.
+      // Spaces will be used.
       if (space == -1) {
         return len;
+      } else if (oneTokenExists) {
+        // Step #2 edge case: no delimiter was found
+        // and only **one** key provided, which means
+        // the key-value pair is likely to be surrounded by
+        // whitespace and should be permitted.
+        setDelimiterType(Delimiters.comma);
+      } else {
+        setDelimiterType(Delimiters.space);
       }
 
-      setDelimiterType(Delimiters.spaceOnly);
       // Go back to the first space token
       current = space;
     }
@@ -301,15 +333,20 @@ class ElementParser {
     // Should never happen
     assert(_element != null, 'Element was not initialized.');
 
-    // Trim white spaces around the equal symbol
+    // Trim white spaces around the token for key-val
+    // assignments. e.g. `key=val`
     final String token = input.substring(start, end).trim();
 
-    // Named kay values are seperated by equals tokens
+    // Edge case: token is just the equal char
+    // Treat this as no key and no value
+    if (token == Glyphs.equal.char) return;
+
+    // Named key values are seperated by equal (=) char
     final int equalPos = token.indexOf(Glyphs.equal.char);
     if (equalPos != -1) {
       final KeyVal kv = KeyVal(
-        key: token.substring(0, equalPos).trim(),
-        val: token.substring(equalPos + 1, token.length).trim(),
+        key: token.substring(0, equalPos).trim().unquote(),
+        val: token.substring(equalPos + 1, token.length).trim().unquote(),
       );
 
       _element?.upsert(kv);
@@ -317,7 +354,7 @@ class ElementParser {
     }
 
     // Nameless key value
-    final KeyVal kv = KeyVal(val: token);
+    final KeyVal kv = KeyVal(val: token.unquote());
     _element?.add(kv);
   }
 

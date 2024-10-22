@@ -10,7 +10,11 @@
 class KeyVal {
   final String? key;
   final String val;
-  KeyVal({this.key, required this.val});
+  final bool _keyContainsSpace;
+  final bool _valContainsSpace;
+  KeyVal({this.key, required this.val})
+      : _keyContainsSpace = key?.contains(' ') ?? false,
+        _valContainsSpace = val.contains(' ');
 
   bool get isNameless {
     return key == null;
@@ -18,10 +22,30 @@ class KeyVal {
 
   @override
   String toString() {
+    final String v = switch (_valContainsSpace) {
+      true => '"$val"',
+      false => val,
+    };
+
     if (isNameless) {
-      return val;
+      return v;
     }
 
-    return '${key!}=$val';
+    final String k = switch (_keyContainsSpace) {
+      true => '"${key!}"',
+      false => key!,
+    };
+
+    return '$k=$v';
+  }
+
+  @override
+  int get hashCode => Object.hash(key.hashCode, val.hashCode);
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! KeyVal) return false;
+
+    return other.key == key && other.val == val;
   }
 }

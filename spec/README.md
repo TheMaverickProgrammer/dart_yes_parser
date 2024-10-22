@@ -21,7 +21,7 @@ Elements can be one of 4 types:
 2. Attribute - Begins with the `@` symbol. This element affects the next
     _standard_ element.
 3. Standard - Begins with any other symbol not reserved by YES spec. These
-    are **YOUR** own elements.
+    are your own elements.
 4. Comment - Begins with `#` symbol. The entire line is parsed as read-only
     text without keyvalues.
 
@@ -173,10 +173,10 @@ Therefore, the parser can also handle the following example:
 Without comma delimiters, the key `y` would incorrectly map to the value `=`.
 
 ### Grammar
-Production rule **__s__** represents any character.\
-Production rule **__s'__** represents any non-reserved character.\
+Production rule **__s__** represents any character sequence.\
+Production rule **__s'__** represents any non-reserved character sequence.\
 Production rule **__ϵ__** generates the empty set (no character).\
-The grammar root begins with `<ELEMENT>`.
+Because every line is independant, the grammar root begins with `<ELEMENT>`.
 
 * `<ELEMENT>` → `<SYMBOL><NAME><KEYVALUE>`
 * `<SYMBOL>` → `<GLOBAL>` | `<ATTRIBUTE> ` | `<COMMENT>` | **__ϵ__**

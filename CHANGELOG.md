@@ -1,3 +1,13 @@
+# 1.0.5
+
+- Added several tests to catch edge-cases. Found and patched: 
+  - One named key-val pair edge-case did not parse correctly. 
+  - We determine the best fit delimiter by token-walking when there is a potentially ambigious key-val.
+  - Key-vals correctly strip quoted text.
+- Removed the `onComplete()` callback. `elementInfoList` and `errorInfoList` can be directly read in the parser instead.
+- Remove `join()` which blocked the thread until a file was parsed.
+- The constructors for `YesParser` are now `static` methods which return the new parser object.
+
 # 1.0.4
 
 - `Entity.getKeyValueAsBool()` parses non-zero integer values as true and zero integer values as false.

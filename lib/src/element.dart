@@ -1,8 +1,20 @@
 import 'dart:collection';
 
-import 'package:yes_parser/extensions.dart';
 import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
+
+/// [ElementInfo] has the [lineNumber] which it was parsed from and the result
+/// [element].
+///
+/// Knowing the [lineNumber] is useful because other parsers using this spec
+/// will need to raise additional errors if elements in their document format
+/// are missing required [Standard.args] or have malformed values.
+class ElementInfo {
+  final Element element;
+  final int lineNumber;
+
+  ElementInfo(this.lineNumber, this.element);
+}
 
 /// [Element] is base of [Attribute], [Standard], [Global], and [Comment].
 ///
@@ -102,11 +114,11 @@ class Element {
 
     // Found
     if (idx != -1) {
-      return _args[idx].val.unquote();
+      return _args[idx].val;
     }
 
     // Miss
-    return or?.unquote();
+    return or;
   }
 
   /// Return [KeyVal.val] as int.
@@ -153,7 +165,7 @@ class Element {
 
   @override
   String toString() {
-    return "${type.symbol}$text ${_printArgs()}";
+    return "${type.symbol}$text${_args.isNotEmpty ? ' ' : ''}${_printArgs()}";
   }
 
   String _printArgs() {

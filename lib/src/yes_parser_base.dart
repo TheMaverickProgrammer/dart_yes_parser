@@ -26,98 +26,89 @@ class ErrorInfo {
   }
 }
 
-/// [ElementInfo] has the [line] which parsed it and the result [Element].
-///
-/// Knowing the [line] is useful because other parsers using this spec may need
-/// to raise additional errors if elements in their doc are missing specific
-/// [Standard.args] or have malformed values.
-class ElementInfo {
-  final int line;
-  final Element element;
-
-  ElementInfo(this.line, this.element);
-}
-
 /// [ParseCompleteFunc] is for on-completed callbacks
 typedef ParseCompleteFunc = void Function(List<ElementInfo>, List<ErrorInfo>);
 
 /// This parser follows the YES spec to extract [Element]s from each line.
 ///
-/// The [Element] list and any errors [ErrorInfo] can be obtained by providing
-/// a [ParseCompleteFunc] callback to any constructor.
+/// The [Element] list and any errors [ErrorInfo] can be obtained by
+/// [elementInfoList] and [errorInfoList] respectively.
 ///
 /// The parser can read asynchronously from a file using [YesParser.fromFile].
-/// To block and wait for the result, await [YesParser.join].
 ///
 /// The parser can read a document's contents using [YesParser.fromString].
-/// This constructor performs synchronously and does not need a call to [join].
-///
-/// Additionally you can check the status via the getter [isComplete].
 class YesParser {
-  final List<Attribute> _attrs = [];
-  final List<ElementInfo> _elements = [];
-  final List<ErrorInfo> _errors = [];
   int _lineCount = 0;
-  final ParseCompleteFunc _onComplete;
-  late Future<void> _future;
-  bool _isComplete = false;
+  final List<Attribute> _attrs = [];
+  final List<ElementInfo> elementInfoList = [];
+  final List<ErrorInfo> errorInfoList = [];
 
-  /// If false, the parser is not finished. True otherwise.
-  bool get isComplete {
-    return _isComplete;
-  }
+  YesParser();
 
-  YesParser.fromFile(File file, {required ParseCompleteFunc onComplete})
-      : _onComplete = onComplete {
-    _future = file
+  static Future<YesParser> fromFile(File file) async {
+    final YesParser parser = YesParser();
+    await file
         .openRead()
         .transform(utf8.decoder)
         .transform(LineSplitter())
-        .forEach((line) => _handleLine(line))
-        .onError(_handleError)
-        .then((_) => _handleComplete());
+        .forEach((line) => parser._handleLine(line))
+        .onError(parser._handleError)
+        .then((_) => parser._handleComplete());
+
+    return parser;
   }
 
-  YesParser.fromString(String contents, {required ParseCompleteFunc onComplete})
-      : _onComplete = onComplete {
-    contents.split('\n').forEach((line) => _handleLine(line));
-    _handleComplete();
-    _future = Future.value();
-  }
+  static YesParser fromString(String contents) {
+    final YesParser parser = YesParser();
 
-  Future<void> join() async {
-    await _future;
+    contents.split('\n').forEach((line) => parser._handleLine(line));
+    parser._handleComplete();
+
+    return parser;
   }
 
   void _handleError(error, stackTrace) {
-    _errors.add(ErrorInfo.other(_lineCount, error.toString()));
+    errorInfoList.add(ErrorInfo.other(_lineCount, error.toString()));
     _handleComplete();
   }
 
   void _handleComplete() {
-    _onComplete.call(_elements, _errors);
-    _isComplete = true;
+    // Hoist globals to the top of the list in order they were entered.
+    elementInfoList.sort(
+      (a, b) => switch ((a.element.type, b.element.type)) {
+        (ElementType.global, ElementType.global) =>
+          a.lineNumber.compareTo(b.lineNumber),
+        (ElementType.global, _) => -1,
+        (_, ElementType.global) => 1,
+        (_, _) => a.lineNumber.compareTo(b.lineNumber),
+      },
+    );
   }
 
   void _handleLine(String line) {
     _lineCount++;
-    final p = ElementParser.read(_lineCount, line);
+    final ElementParser elementParser = ElementParser.read(_lineCount, line);
 
-    if (!p.isOk) {
-      _errors.add(ErrorInfo(_lineCount, p.error!));
+    if (!elementParser.isOk) {
+      errorInfoList.add(ErrorInfo(_lineCount, elementParser.error!));
       return;
     }
 
-    switch (p.elementInfo.element.type) {
+    final ElementInfo info = elementParser.elementInfo;
+
+    switch (info.element.type) {
       case ElementType.attribute:
-        _attrs.add(p.elementInfo.element as Attribute);
+        // Per the spec, collect attributes to assign them to the
+        // next standard element.
+        _attrs.add(info.element as Attribute);
         return;
       case ElementType.standard:
-        (p.elementInfo.element as Standard).setAttributes(_attrs);
+        // Flush collected attributes into this standard element.
+        (info.element as Standard).setAttributes(_attrs);
         _attrs.clear();
-        _elements.add(ElementInfo(_lineCount, p.elementInfo.element));
+        elementInfoList.add(ElementInfo(_lineCount, info.element));
       case _:
-        _elements.add(ElementInfo(_lineCount, p.elementInfo.element));
+        elementInfoList.add(ElementInfo(_lineCount, info.element));
     }
   }
 }

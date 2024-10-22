@@ -1,41 +1,71 @@
 # YES Script
 `YES` - **Y**our **E**xtensible **S**cript .
 
-YES is a meta [scriptlet standard][SPEC] whose elements and meaning are determined
-by **YOU** the programmer. They can be extended further with attributes which
-allow **YOUR** end-users to make their additions to **YOUR** elements.
+Do you want a custom and simple file format but don't want to code the parser?
+**YES** is the answer! ✨
+
+YES is a meta scriplet standard whose elements, keys, and evaluation
+are yours to decide. These scriplets are used for configuration files,
+animation documents, tiny scripting, and then some. YES has optional 
+**attribute** support to tag elements and extend their behavior further.
+
+> [!TIP]
+> - Read the [scriptlet standard][SPEC] to learn more.
+> - See one of the many use cases: [animation][BOOMFLAME] files.
 
 ## Getting Started
-The dart API provides two constructors: parsing by file or parsing by string.
-These constructors require the callback function to be set via `.onComplete(...)`.
+This API provides two static class methods:
+  1. Parse by file.
+  2. Parse by string.
 
-Loading by file is asynchronous and must be waited on for completion
+> [!NOTE]
+> Loading by file is asynchronous.
+
 ```dart
 void main() async {
-  final p = YesParser.fromFile(File.fromUri(Uri.file("doc.mesh")), onComplete: onComplete);
+  final YesParser parser = await YesParser.fromFile(
+    File.fromUri(
+      Uri.file("doc.mesh"),
+    ),
+  );
 
-  // Wait for parser to finish before ending program
-  await p.join();
+  // Successfully parsed elements are stored in [elementInfoList].
+  // Errors are stored in [errorInfoList].
+  onComplete(parser.elementInfoList, parser.errorInfoList);
 }
 
 void onComplete(List<ElementInfo> elements, List<ErrorInfo> errors) { ... }
 ```
 
-Loading by string is synchronous and can be used immediately.
+> [!NOTE]
+> Loading by string is synchronous.
+
 ```dart
 void main() {
-  final p = YesParser.fromFile("...", onComplete: onComplete);
+  // docStr is a large document with each line separated by new-lines.
+  final String docStr = "...";
+  final YesParser parser = YesParser.fromString(docStr);
+  onComplete(parser.elementInfoList, parser.errorInfoList);
 }
 
 void onComplete(List<ElementInfo> elements, List<ErrorInfo> errors) { ... }
 ```
 
-See the [example](./example/yes_parser_example.dart) to learn how to access
-element types and their data from an example [3D format](./example/doc.mesh)
-which uses the spec.
+### Run the Example
+
+Enter the example directory and run from command line.
+```bsh
+cd example
+dart yes_parser_example.dart
+```
+
+This simple [example](./example/yes_parser_example.dart) shows how to step through
+each element and ignore unimportant errors for a [3D Mesh format](./example/doc.mesh)
+similar to Wavefront's 3D `.OBJ` format.
 
 ## License
 This project is licensed under the [Common Development and Distribution License (CDDL)][LEGAL].
 
-[SPEC]: https://github.com/TheMaverickProgrammer/dart_yes_parser/blob/master/spec/README.md
+[BOOMFLAME]: https://github.com/TheMaverickProgrammer/boomflame
 [LEGAL]: https://github.com/TheMaverickProgrammer/dart_yes_parser/blob/master/LICENSE
+[SPEC]: https://github.com/TheMaverickProgrammer/dart_yes_parser/blob/master/spec/README.md
