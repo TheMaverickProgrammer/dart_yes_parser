@@ -2,106 +2,108 @@ import 'package:test/test.dart';
 import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/yes_parser.dart';
 
-ParseCompleteFunc checkDelimeterClosure(
-    {required String testName,
-    required List<String> values,
-    List<String>? expectedErrors}) {
-  return (List<ElementInfo> elements, List<ErrorInfo> errors) {
+void checkDelimeter(
+  String testName, {
+  required List<ElementInfo> elements,
+  required List<ErrorInfo> errors,
+  required List<String> expectedValues,
+  List<String>? expectedErrors,
+}) {
+  expect(
+    expectedValues.length,
+    elements.length,
+    reason: '[$testName] Expected elements and expected values to be equal.'
+        '\nWas: ${elements.length}. Expected: ${expectedValues.length})',
+  );
+
+  if (expectedErrors != null) {
     expect(
-      values.length,
-      elements.length,
-      reason: '[$testName] Expected elements and test values to be equal.'
-          '\nWas: ${elements.length}. Expected: ${values.length})',
+      expectedErrors.length,
+      errors.length,
+      reason:
+          '[$testName] Expected to have the same number of errors as expected values.'
+          '\nWas: ${errors.length}. Expected: ${expectedErrors.length}',
     );
+  }
 
-    if (expectedErrors != null) {
-      expect(
-        expectedErrors.length,
-        errors.length,
+  final int len = expectedValues.length;
+  for (int i = 0; i < len; i++) {
+    final Element el = elements[i].element;
+    expect(el.toString(), expectedValues[i],
         reason:
-            '[$testName] Expected to have the same number of errors as values.'
-            '\nWas: ${errors.length}. Expected: ${expectedErrors.length}',
-      );
-    }
-
-    final int len = values.length;
-    for (int i = 0; i < len; i++) {
-      final Element el = elements[i].element;
-      expect(el.toString(), values[i],
-          reason:
-              '[$testName] Parsed element values[$i] did not match test string');
-    }
-  };
+            '[$testName] Parsed element expectedValues[$i] did not match test string');
+  }
 }
 
-ParseCompleteFunc checkArgsClosure(
-    {required String testName,
-    required List<List<KeyVal?>> values,
-    List<String>? expectedErrors,
-    dynamic matcher}) {
-  return (List<ElementInfo> elements, List<ErrorInfo> errors) {
+void checkArgs(
+  String testName, {
+  required List<ElementInfo> elements,
+  required List<ErrorInfo> errors,
+  required List<List<KeyVal?>> expectedValues,
+  List<String>? expectedErrors,
+  dynamic matcher,
+}) {
+  expect(
+    expectedValues.length,
+    elements.length,
+    reason: '[$testName] Expected elements and expected values to be equal.'
+        '\nWas: ${elements.length}. Expected: ${expectedValues.length})',
+  );
+
+  if (expectedErrors != null) {
     expect(
-      values.length,
-      elements.length,
-      reason: '[$testName] Expected elements and test values to be equal.'
-          '\nWas: ${elements.length}. Expected: ${values.length})',
+      expectedErrors.length,
+      errors.length,
+      reason:
+          '[$testName] Expected to have the same number of errors as expected values.'
+          '\nWas: ${errors.length}. Expected: ${expectedErrors.length}',
+    );
+  }
+
+  final int len = expectedValues.length;
+  for (int i = 0; i < len; i++) {
+    final Element el = elements[i].element;
+    final List<KeyVal?> args = expectedValues[i];
+
+    final int argLen = args.length;
+
+    // These two DO NOT match in length. Pass early so not to
+    // throw an exception when testing for failures.
+    if (matcher == isNot && el.args.length != argLen) continue;
+
+    expect(
+      el.args.length,
+      argLen,
+      reason:
+          '[$testName] Parsed args length is incorrect for element=${el.text}',
     );
 
-    if (expectedErrors != null) {
+    if (matcher == isNot) {
+      // Make sure at least one arg does not match
+      bool oneFailed = false;
+      for (int j = 0; j < argLen; j++) {
+        if (el.args[j] == args[j]) continue;
+        oneFailed = true;
+        break;
+      }
       expect(
-        expectedErrors.length,
-        errors.length,
+        oneFailed,
+        true,
         reason:
-            '[$testName] Expected to have the same number of errors as values.'
-            '\nWas: ${errors.length}. Expected: ${expectedErrors.length}',
+            '[$testName] Was not expecting all args to be the same for element ${el.text}',
       );
-    }
-
-    final int len = values.length;
-    for (int i = 0; i < len; i++) {
-      final Element el = elements[i].element;
-      final List<KeyVal?> args = values[i];
-
-      final int argLen = args.length;
-
-      // These two DO NOT match in length. Pass early so not to
-      // throw an exception when testing for failures.
-      if (matcher == isNot && el.args.length != argLen) continue;
-
-      expect(
-        el.args.length,
-        argLen,
-        reason:
-            '[$testName] Parsed args length is incorrect for element=${el.text}',
-      );
-
-      if (matcher == isNot) {
-        // Make sure at least one arg does not match
-        bool oneFailed = false;
-        for (int j = 0; j < argLen; j++) {
-          if (el.args[j] == args[j]) continue;
-          oneFailed = true;
-          break;
-        }
+    } else {
+      // Make sure every arg matches!
+      for (int j = 0; j < argLen; j++) {
         expect(
-          oneFailed,
-          true,
+          el.args[j],
+          matcher?.call(args[j]) ?? args[j],
           reason:
-              '[$testName] Was not expecting all args to be the same for element ${el.text}',
+              '[$testName] Parsed KeyVal for element ${el.text} had unexpected args[$j] value',
         );
-      } else {
-        // Make sure every arg matches!
-        for (int j = 0; j < argLen; j++) {
-          expect(
-            el.args[j],
-            matcher?.call(args[j]) ?? args[j],
-            reason:
-                '[$testName] Parsed KeyVal for element ${el.text} had unexpected args[$j] value',
-          );
-        }
       }
     }
-  };
+  }
 }
 
 void main() {
@@ -160,14 +162,14 @@ void main() {
       'x a=b, -c',
     ];
 
-    final p = YesParser.fromString(
-      doc.join('\n'),
-      onComplete:
-          checkDelimeterClosure(testName: 'Delimiter Test', values: expected),
-    );
+    final parser = YesParser.fromString(doc.join('\n'));
 
-    // Wait for parser to finish before ending program
-    await p.join();
+    checkDelimeter(
+      'Delimiter Test',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: expected,
+    );
   });
 
   test("KeyVal quoted keys and values are parsed without quotes", () async {
@@ -190,12 +192,16 @@ void main() {
     ];
 
     final docStr = doc.join('\n');
-    final p = YesParser.fromString(
+    final parser = YesParser.fromString(
       docStr,
-      onComplete:
-          checkArgsClosure(testName: 'Quoted Test', values: expectedNotQuoted),
     );
-    await p.join();
+
+    checkArgs(
+      'Quoted Test',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: expectedNotQuoted,
+    );
   });
 
   test("KeyVals parse correctly", () async {
@@ -286,13 +292,14 @@ void main() {
       [KeyVal(key: 'a', val: 'b'), KeyVal(val: '-c')],
     ];
 
-    final p = YesParser.fromString(
-      doc.join('\n'),
-      onComplete: checkArgsClosure(testName: 'Parse Test', values: expected),
-    );
+    final parser = YesParser.fromString(doc.join('\n'));
 
-    // Wait for parser to finish before ending program
-    await p.join();
+    checkArgs(
+      'Parse Test',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: expected,
+    );
   });
 
   test("Parse KeyVal fail test (sanity check)", () async {
@@ -329,14 +336,17 @@ void main() {
       ],
     ];
 
-    final p = YesParser.fromString(
+    final parser = YesParser.fromString(
       doc.join('\n'),
-      onComplete: checkArgsClosure(
-          testName: 'Sanity Check', values: isNotExpected, matcher: isNot),
     );
 
-    // Wait for parser to finish before ending program
-    await p.join();
+    checkArgs(
+      'Sanity Check',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: isNotExpected,
+      matcher: isNot,
+    );
   });
 
   test("Globals are hoisted to the top in the output element list", () async {
@@ -368,13 +378,13 @@ void main() {
       '6 key=val',
     ];
 
-    final p = YesParser.fromString(
-      doc.join('\n'),
-      onComplete: checkDelimeterClosure(
-          testName: 'Globals Hoist Test', values: expected),
-    );
+    final parser = YesParser.fromString(doc.join('\n'));
 
-    // Wait for parser to finish before ending program
-    await p.join();
+    checkDelimeter(
+      'Globals Hoist Test',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: expected,
+    );
   });
 }

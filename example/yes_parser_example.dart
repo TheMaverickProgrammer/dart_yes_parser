@@ -5,14 +5,9 @@ import 'package:yes_parser/yes_parser.dart';
 /// and how to digest [ElementInfo] and [ErrorInfo] after parsing.
 void main() async {
   final File file = File.fromUri(Uri.file("doc.mesh"));
+  final YesParser parser = await YesParser.fromFile(file);
 
-  final p = YesParser.fromFile(
-    file,
-    onComplete: printAll,
-  );
-
-  // Wait for parser to finish before ending program
-  await p.join();
+  printAll(parser.elementInfoList, parser.errorInfoList);
 }
 
 /// [Element] is the base class of each keyword. Upcasting is needed.
