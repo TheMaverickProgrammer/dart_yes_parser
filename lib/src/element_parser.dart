@@ -241,12 +241,37 @@ class ElementParser {
       final bool isEqual = Glyphs.equal.char == c;
       final bool isQuote = Glyphs.quote.char == c;
 
+      // Ensure quote flag is toggled for this step.
+      if (isQuote) {
+        if (quote == -1) {
+          quote = current;
+        } else {
+          quote = -1;
+        }
+
+        current++;
+        continue;
+      }
+
+      // Look ahead for terminating quote
+      if (quote != -1) {
+        int quotePos = input.indexOf(Glyphs.quote.char, current);
+        if (quotePos != -1) {
+          current = quotePos + 1;
+          continue;
+        } else {
+          // This loop will never resolve the delimiter because
+          // there is a missing terminating quote.
+          break;
+        }
+      }
+
       if (isComma) {
         setDelimiterType(Delimiters.comma);
         break;
       }
 
-      if (!isSpace && !isEqual && !isQuote) {
+      if (!isSpace && !isEqual) {
         // The leading equals char determines how the rest of the document
         // will be parsed when no comma delimiter is set
         if (!tokenWalk) {
@@ -262,30 +287,17 @@ class ElementParser {
           (equal == -1) ? spacesBfEq++ : spacesAfEq++;
         }
         tokenWalk = false;
-      }
 
-      if (quote == -1) {
-        if (isSpace && space == -1) {
+        if (space == -1) {
           space = current;
         }
-
-        if (isEqual) {
-          tokenWalk = false;
-          if (equal == -1) {
-            equal = current;
-          }
-
-          equalCount++;
+      } else if (isEqual) {
+        tokenWalk = false;
+        if (equal == -1) {
+          equal = current;
         }
-      }
 
-      // Ensure quotes are toggled, if token was reached
-      if (isQuote) {
-        if (quote == -1) {
-          quote = current;
-        } else {
-          quote = -1;
-        }
+        equalCount++;
       }
 
       current++;

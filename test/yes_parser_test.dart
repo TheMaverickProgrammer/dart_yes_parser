@@ -387,4 +387,28 @@ void main() {
       expectedValues: expected,
     );
   });
+
+  test("Macro-like strings", () async {
+    const doc = <String>[
+      '!macro teardown_textbox(tb) = "call common.textbox_teardown tb="tb',
+    ];
+
+    final expected = <List<KeyVal?>>[
+      [
+        KeyVal(
+          key: 'teardown_textbox(tb)',
+          val: '"call common.textbox_teardown tb="tb',
+        ),
+      ],
+    ];
+
+    final parser = YesParser.fromString(doc.join('\n'));
+
+    checkArgs(
+      'Macro args',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: expected,
+    );
+  });
 }
