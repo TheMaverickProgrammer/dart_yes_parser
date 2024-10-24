@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:yes_parser/src/element.dart';
 import 'package:yes_parser/src/element_parser.dart';
 import 'package:yes_parser/src/enums.dart';
+import 'package:yes_parser/src/literal.dart';
 
 /// [ErrorInfo] has the offending [line] and reason [message].
 ///
@@ -46,23 +47,26 @@ class YesParser {
 
   YesParser();
 
-  static Future<YesParser> fromFile(File file) async {
+  static Future<YesParser> fromFile(File file,
+      {List<Literal>? literals}) async {
     final YesParser parser = YesParser();
     await file
         .openRead()
         .transform(utf8.decoder)
         .transform(LineSplitter())
-        .forEach((line) => parser._handleLine(line))
+        .forEach((line) => parser._handleLine(line, literals: literals))
         .onError(parser._handleError)
         .then((_) => parser._handleComplete());
 
     return parser;
   }
 
-  static YesParser fromString(String contents) {
+  static YesParser fromString(String contents, {List<Literal>? literals}) {
     final YesParser parser = YesParser();
 
-    contents.split('\n').forEach((line) => parser._handleLine(line));
+    contents
+        .split('\n')
+        .forEach((line) => parser._handleLine(line, literals: literals));
     parser._handleComplete();
 
     return parser;
@@ -86,7 +90,7 @@ class YesParser {
     );
   }
 
-  void _handleLine(String line) {
+  void _handleLine(String line, {List<Literal>? literals}) {
     _lineCount++;
 
     // Append multi-line strings before parsing them.
@@ -114,7 +118,8 @@ class YesParser {
     }
 
     // Perform the parse.
-    final ElementParser elementParser = ElementParser.read(_lineCount, line);
+    final ElementParser elementParser =
+        ElementParser.read(_lineCount, line, literals: literals);
 
     if (!elementParser.isOk) {
       errorInfoList.add(ErrorInfo(_lineCount, elementParser.error!));

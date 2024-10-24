@@ -3,6 +3,7 @@ import 'package:yes_parser/extensions.dart';
 import 'package:yes_parser/src/keyval.dart';
 import 'package:yes_parser/src/enums.dart';
 import 'package:yes_parser/src/element.dart';
+import 'package:yes_parser/src/literal.dart';
 
 /// [ElementParser] parses the [elementInfo] from a line.
 /// Used internally.
@@ -40,7 +41,7 @@ class ElementParser {
     return ElementInfo(lineNumber, _element!);
   }
 
-  ElementParser.read(this.lineNumber, String line) {
+  ElementParser.read(this.lineNumber, String line, {List<Literal>? literals}) {
     // Step 1: Trim whitespace and start at the first valid character
     line = line.trim();
     final int len = line.length;
@@ -139,15 +140,15 @@ class ElementParser {
     }
 
     // Step 4: parse tokens, if any and return results
-    parseTokens(line, end);
+    parseTokens(line, end, literals: literals);
   }
 
-  void parseTokens(String input, int start) {
+  void parseTokens(String input, int start, {List<Literal>? literals}) {
     int end = start;
 
     // Evaluate all tokens on line
     while (end < input.length) {
-      end = parseTokenStep(input, end + 1);
+      end = parseTokenStep(input, end + 1, literals: literals);
 
       // Abort early if there is a problem
       if (!isOk) {
@@ -156,7 +157,7 @@ class ElementParser {
     }
   }
 
-  int parseTokenStep(String input, int start) {
+  int parseTokenStep(String input, int start, {List<Literal>? literals}) {
     final int len = input.length;
 
     // Find first non-space character
@@ -174,17 +175,26 @@ class ElementParser {
       return len;
     }
 
-    final int end = evaluateDelimiter(input, start);
+    final int end = evaluateDelimiter(input, start, literals: literals);
     evaluateToken(input, start, end);
     return end;
   }
 
-  int evaluateDelimiter(String input, int start) {
+  int evaluateDelimiter(String input, int start, {List<Literal>? literals}) {
+    /// User Defined Literals
+    final Map<Literal, bool> udLiterals = switch (literals) {
+      List<Literal> literals => <Literal, bool>{
+          for (final Literal literal in literals) literal: false
+        },
+      null => {}
+    };
+
     bool quoted = false; // Finds matching end-quotes
     final int len = input.length;
     int current = start;
 
-    // Step 1: skip string literals beginning and ending with quotes
+    // Step 1: skip string literals
+    // TODO: Ideally unify the codebase so that searching for UDT literals is the same as searching for spec literals.
     while (current < len) {
       int quotePos = input.indexOf(Glyphs.quote.char, current);
       if (quoted) {

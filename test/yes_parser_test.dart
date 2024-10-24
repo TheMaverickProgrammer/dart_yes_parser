@@ -414,7 +414,7 @@ void main() {
 
   test("Multi-line elements", () async {
     const doc = <String>[
-      'var list: [str]="apple, bananas, coconut, diamond, eggplant\\',
+      'var msg: str="apple, bananas, coconut, diamond, eggplant\\',
       ', fig, grape, horse, igloo, joke, kangaroo\\',
       ', lemon, notebook, mango, orange, pineapple"',
       'var list2: [int]="1\\',
@@ -424,10 +424,10 @@ void main() {
     final expected = <List<KeyVal?>>[
       [
         KeyVal(
-          val: 'list:',
+          val: 'msg:',
         ),
         KeyVal(
-          key: '[str]',
+          key: 'str',
           val: 'apple, bananas, coconut, diamond, eggplant'
               ', fig, grape, horse, igloo, joke, kangaroo'
               ', lemon, notebook, mango, orange, pineapple',
@@ -444,7 +444,15 @@ void main() {
       ],
     ];
 
-    final parser = YesParser.fromString(doc.join('\n'));
+    final parser = YesParser.fromString(
+      doc.join('\n'),
+      literals: [
+        Literal(
+          begin: '[',
+          end: ']',
+        ),
+      ],
+    );
 
     checkArgs(
       'Mult-line elements',
