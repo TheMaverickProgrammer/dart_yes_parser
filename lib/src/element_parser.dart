@@ -182,55 +182,17 @@ class ElementParser {
 
   int evaluateDelimiter(String input, int start, {List<Literal>? literals}) {
     /// User Defined Literals
-    final Map<Literal, bool> udLiterals = switch (literals) {
-      List<Literal> literals => <Literal, bool>{
-          for (final Literal literal in literals) literal: false
+    final Map<Literal, int> udLiterals = switch (literals) {
+      List<Literal> literals => <Literal, int>{
+          for (final Literal literal in literals) literal: -1
         },
       null => {}
     };
 
-    bool quoted = false; // Finds matching end-quotes
     final int len = input.length;
     int current = start;
 
-    // Step 1: skip string literals
-    // TODO: Ideally unify the codebase so that searching for UDT literals is the same as searching for spec literals.
-    while (current < len) {
-      int quotePos = input.indexOf(Glyphs.quote.char, current);
-      if (quoted) {
-        if (quotePos == -1) {
-          setError(ErrorType.unterminatedQuote);
-          return len;
-        }
-        quoted = false;
-        start = quotePos;
-        current = start + 1;
-        continue;
-      }
-
-      assert(!quoted, 'Parser has unterminated quote without an early exit.');
-
-      final int spacePos = input.indexOf(Glyphs.space.char, current);
-      final int commaPos = input.indexOf(Glyphs.comma.char, current);
-
-      if (spacePos > -1 && quotePos > spacePos) {
-        quotePos = -1;
-      }
-
-      if (commaPos > -1 && quotePos > commaPos) {
-        quotePos = -1;
-      }
-
-      if (quotePos > -1) {
-        quoted = true;
-        start = quotePos;
-        current = start + 1;
-        continue;
-      }
-
-      break;
-    }
-
+    // TODO: if this change works, reduce the step numbers
     // Step 2: assign delimiter if not yet set
     // by scanning white spaces in search for the first comma.
     //
@@ -239,24 +201,42 @@ class ElementParser {
     // since it is the case when it is obvious there are no other
     // arguments to parse.
 
-    int space = -1, equal = -1, quote = -1;
+    int space = -1, equal = -1;
     int equalCount = 0, spacesBfEq = 0, spacesAfEq = 0;
     int tokensBfEq = 0, tokensAfEq = 0;
     bool tokenWalk = false;
+    Literal? activeLiteral;
 
     while (!isDelimiterSet && current < len) {
       final String c = input[current];
       final bool isComma = Glyphs.comma.char == c;
       final bool isSpace = Glyphs.space.char == c;
       final bool isEqual = Glyphs.equal.char == c;
-      final bool isQuote = Glyphs.quote.char == c;
 
-      // Ensure quote flag is toggled for this step.
-      if (isQuote) {
-        if (quote == -1) {
-          quote = current;
+      bool isLiteral = false;
+      if (activeLiteral != null) {
+        // Test if this is the matching end glyph
+        if (activeLiteral.end == c) {
+          isLiteral = true;
+        }
+      } else {
+        // Test all literals to begin a string span
+        for (final Literal literal in udLiterals.keys) {
+          if (literal.begin == c) {
+            isLiteral = true;
+            activeLiteral = literal;
+            break;
+          }
+        }
+      }
+
+      // Ensure literals are terminated before evaluating delimiters.
+      if (isLiteral) {
+        if (udLiterals[activeLiteral] == -1) {
+          udLiterals[activeLiteral!] = current;
         } else {
-          quote = -1;
+          udLiterals[activeLiteral!] = -1;
+          activeLiteral = null;
         }
 
         current++;
@@ -264,14 +244,14 @@ class ElementParser {
       }
 
       // Look ahead for terminating quote
-      if (quote != -1) {
-        int quotePos = input.indexOf(Glyphs.quote.char, current);
-        if (quotePos != -1) {
-          current = quotePos + 1;
+      if ((udLiterals[activeLiteral] ?? -1) != -1) {
+        final int literalEndPos = input.indexOf(activeLiteral!.end, current);
+        if (literalEndPos != -1) {
+          current = literalEndPos;
           continue;
         } else {
           // This loop will never resolve the delimiter because
-          // there is a missing terminating quote.
+          // there is a missing terminating literal.
           break;
         }
       }
@@ -351,6 +331,7 @@ class ElementParser {
     return min(len, idx);
   }
 
+  // TODO: Provide valid equal token pivot
   void evaluateToken(String input, int start, int end) {
     // Should never happen
     assert(_element != null, 'Element was not initialized.');

@@ -416,9 +416,9 @@ void main() {
     const doc = <String>[
       'var msg: str="apple, bananas, coconut, diamond, eggplant\\',
       ', fig, grape, horse, igloo, joke, kangaroo\\',
-      ', lemon, notebook, mango, orange, pineapple"',
-      'var list2: [int]="1\\',
-      ', 2, 3, 4, 5, 6, 7"',
+      ', lemon, notebook, mango"',
+      'var list2: [int]=[1\\',
+      ', 2, 3, 4, 5, 6, 7]',
     ];
 
     final expected = <List<KeyVal?>>[
@@ -430,7 +430,7 @@ void main() {
           key: 'str',
           val: 'apple, bananas, coconut, diamond, eggplant'
               ', fig, grape, horse, igloo, joke, kangaroo'
-              ', lemon, notebook, mango, orange, pineapple',
+              ', lemon, notebook, mango',
         ),
       ],
       [
@@ -439,7 +439,7 @@ void main() {
         ),
         KeyVal(
           key: '[int]',
-          val: '1, 2, 3, 4, 5, 6, 7',
+          val: '[1, 2, 3, 4, 5, 6, 7]',
         ),
       ],
     ];

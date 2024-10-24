@@ -50,6 +50,13 @@ class YesParser {
   static Future<YesParser> fromFile(File file,
       {List<Literal>? literals}) async {
     final YesParser parser = YesParser();
+
+    // Provide or append default quote pair literals
+    literals = switch (literals) {
+      null => [Literal.quotes()],
+      List<Literal> list => list..add(Literal.quotes()),
+    };
+
     await file
         .openRead()
         .transform(utf8.decoder)
@@ -63,6 +70,12 @@ class YesParser {
 
   static YesParser fromString(String contents, {List<Literal>? literals}) {
     final YesParser parser = YesParser();
+
+    // Provide or append default quote pair literals
+    literals = switch (literals) {
+      null => [Literal.quotes()],
+      List<Literal> list => list..add(Literal.quotes()),
+    };
 
     contents
         .split('\n')
