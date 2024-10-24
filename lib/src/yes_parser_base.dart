@@ -39,6 +39,7 @@ typedef ParseCompleteFunc = void Function(List<ElementInfo>, List<ErrorInfo>);
 /// The parser can read a document's contents using [YesParser.fromString].
 class YesParser {
   int _lineCount = 0;
+  String? _buildingLine;
   final List<Attribute> _attrs = [];
   final List<ElementInfo> elementInfoList = [];
   final List<ErrorInfo> errorInfoList = [];
@@ -87,6 +88,32 @@ class YesParser {
 
   void _handleLine(String line) {
     _lineCount++;
+
+    // Append multi-line strings before parsing them.
+    if (line.endsWith(Glyphs.backslash.char)) {
+      // Erase multiline and char-literal glyphs
+      line = line.replaceAll(Glyphs.backslash.char, '');
+
+      _buildingLine = switch (_buildingLine) {
+        null => line,
+        String s => s + line,
+      };
+
+      // Handle nextline.
+      return;
+    } else if (_buildingLine != null) {
+      // We were building a line to parse and this is the last part.
+
+      final String str = _buildingLine!;
+
+      // Use the complete line as input to the parser.
+      line = str + line;
+
+      // Clear.
+      _buildingLine = null;
+    }
+
+    // Perform the parse.
     final ElementParser elementParser = ElementParser.read(_lineCount, line);
 
     if (!elementParser.isOk) {

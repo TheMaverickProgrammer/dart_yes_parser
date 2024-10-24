@@ -405,7 +405,49 @@ void main() {
     final parser = YesParser.fromString(doc.join('\n'));
 
     checkArgs(
-      'Macro args',
+      'Macro-like string args',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: expected,
+    );
+  });
+
+  test("Multi-line elements", () async {
+    const doc = <String>[
+      'var list: [str]="apple, bananas, coconut, diamond, eggplant\\',
+      ', fig, grape, horse, igloo, joke, kangaroo\\',
+      ', lemon, notebook, mango, orange, pineapple"',
+      'var list2: [int]="1\\',
+      ', 2, 3, 4, 5, 6, 7"',
+    ];
+
+    final expected = <List<KeyVal?>>[
+      [
+        KeyVal(
+          val: 'list:',
+        ),
+        KeyVal(
+          key: '[str]',
+          val: 'apple, bananas, coconut, diamond, eggplant'
+              ', fig, grape, horse, igloo, joke, kangaroo'
+              ', lemon, notebook, mango, orange, pineapple',
+        ),
+      ],
+      [
+        KeyVal(
+          val: 'list2:',
+        ),
+        KeyVal(
+          key: '[int]',
+          val: '1, 2, 3, 4, 5, 6, 7',
+        ),
+      ],
+    ];
+
+    final parser = YesParser.fromString(doc.join('\n'));
+
+    checkArgs(
+      'Mult-line elements',
       elements: parser.elementInfoList,
       errors: parser.errorInfoList,
       expectedValues: expected,
