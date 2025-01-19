@@ -10,7 +10,8 @@ enum ElementType {
   standard(''),
   attribute('@'),
   global('!'),
-  comment('#');
+  comment('#'),
+  multiline(r'\');
 
   final String symbol;
   const ElementType(this.symbol);
@@ -25,7 +26,8 @@ enum Glyphs {
   hash('#'),
   space(' '),
   comma(','),
-  quote(r'"');
+  quote(r'"'),
+  backslash(r'\');
 
   final String char;
   const Glyphs(this.char);

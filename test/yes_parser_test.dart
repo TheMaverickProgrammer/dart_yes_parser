@@ -387,4 +387,78 @@ void main() {
       expectedValues: expected,
     );
   });
+
+  test("Macro-like strings", () async {
+    const doc = <String>[
+      '!macro teardown_textbox(tb) = "call common.textbox_teardown tb="tb',
+    ];
+
+    final expected = <List<KeyVal?>>[
+      [
+        KeyVal(
+          key: 'teardown_textbox(tb)',
+          val: '"call common.textbox_teardown tb="tb',
+        ),
+      ],
+    ];
+
+    final parser = YesParser.fromString(doc.join('\n'));
+
+    checkArgs(
+      'Macro-like string args',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: expected,
+    );
+  });
+
+  test("Multi-line elements", () async {
+    const doc = <String>[
+      'var msg: str="apple, bananas, coconut, diamond, eggplant\\',
+      ', fig, grape, horse, igloo, joke, kangaroo\\',
+      ', lemon, notebook, mango"',
+      'var list2: [int]=[1\\',
+      ', 2, 3, 4, 5, 6, 7]',
+    ];
+
+    final expected = <List<KeyVal?>>[
+      [
+        KeyVal(
+          val: 'msg:',
+        ),
+        KeyVal(
+          key: 'str',
+          val: 'apple, bananas, coconut, diamond, eggplant'
+              ', fig, grape, horse, igloo, joke, kangaroo'
+              ', lemon, notebook, mango',
+        ),
+      ],
+      [
+        KeyVal(
+          val: 'list2:',
+        ),
+        KeyVal(
+          key: '[int]',
+          val: '[1, 2, 3, 4, 5, 6, 7]',
+        ),
+      ],
+    ];
+
+    final parser = YesParser.fromString(
+      doc.join('\n'),
+      literals: [
+        Literal(
+          begin: '[',
+          end: ']',
+        ),
+      ],
+    );
+
+    checkArgs(
+      'Mult-line elements',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: expected,
+    );
+  });
 }

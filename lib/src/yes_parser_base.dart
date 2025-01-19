@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:yes_parser/src/element.dart';
 import 'package:yes_parser/src/element_parser.dart';
 import 'package:yes_parser/src/enums.dart';
+import 'package:yes_parser/src/literal.dart';
 
 /// [ErrorInfo] has the offending [line] and reason [message].
 ///
@@ -39,29 +40,46 @@ typedef ParseCompleteFunc = void Function(List<ElementInfo>, List<ErrorInfo>);
 /// The parser can read a document's contents using [YesParser.fromString].
 class YesParser {
   int _lineCount = 0;
+  String? _buildingLine;
   final List<Attribute> _attrs = [];
   final List<ElementInfo> elementInfoList = [];
   final List<ErrorInfo> errorInfoList = [];
 
   YesParser();
 
-  static Future<YesParser> fromFile(File file) async {
+  static Future<YesParser> fromFile(File file,
+      {List<Literal>? literals}) async {
     final YesParser parser = YesParser();
+
+    // Provide or append default quote pair literals
+    literals = switch (literals) {
+      null => [Literal.quotes()],
+      List<Literal> list => list..add(Literal.quotes()),
+    };
+
     await file
         .openRead()
         .transform(utf8.decoder)
         .transform(LineSplitter())
-        .forEach((line) => parser._handleLine(line))
+        .forEach((line) => parser._handleLine(line, literals: literals))
         .onError(parser._handleError)
         .then((_) => parser._handleComplete());
 
     return parser;
   }
 
-  static YesParser fromString(String contents) {
+  static YesParser fromString(String contents, {List<Literal>? literals}) {
     final YesParser parser = YesParser();
 
-    contents.split('\n').forEach((line) => parser._handleLine(line));
+    // Provide or append default quote pair literals
+    literals = switch (literals) {
+      null => [Literal.quotes()],
+      List<Literal> list => list..add(Literal.quotes()),
+    };
+
+    contents
+        .split('\n')
+        .forEach((line) => parser._handleLine(line, literals: literals));
     parser._handleComplete();
 
     return parser;
@@ -85,9 +103,36 @@ class YesParser {
     );
   }
 
-  void _handleLine(String line) {
+  void _handleLine(String line, {List<Literal>? literals}) {
     _lineCount++;
-    final ElementParser elementParser = ElementParser.read(_lineCount, line);
+
+    // Append multi-line strings before parsing them.
+    if (line.endsWith(Glyphs.backslash.char)) {
+      // Erase multiline and char-literal glyphs
+      line = line.replaceAll(Glyphs.backslash.char, '');
+
+      _buildingLine = switch (_buildingLine) {
+        null => line,
+        String s => s + line,
+      };
+
+      // Handle nextline.
+      return;
+    } else if (_buildingLine != null) {
+      // We were building a line to parse and this is the last part.
+
+      final String str = _buildingLine!;
+
+      // Use the complete line as input to the parser.
+      line = str + line;
+
+      // Clear.
+      _buildingLine = null;
+    }
+
+    // Perform the parse.
+    final ElementParser elementParser =
+        ElementParser.read(_lineCount, line, literals: literals);
 
     if (!elementParser.isOk) {
       errorInfoList.add(ErrorInfo(_lineCount, elementParser.error!));
