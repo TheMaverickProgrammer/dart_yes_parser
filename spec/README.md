@@ -8,6 +8,8 @@
     - [Attributes](#attributes)
       - [Multiple attributes](#multiple-attributes)
     - [Delimiters](#delimiters)
+    - [Custom literal spans](#custom-literal-spans)
+    - [Multiline elements](#multiline-elements)
     - [Grammar](#grammar)
       - [Reserved Characters](#reserved-characters)
 
@@ -163,8 +165,8 @@ In order to properly parse multipe keyvalues, the parser must make a\
 distinction between to beginning and end of additional consequtive tokens.
 
 The following are the only allowed delimiter characters:
-* `spaceOnly` or ` ` the blank character
-* `spaceComma` or `,` the comma character
+* `space` or ` ` the blank character
+* `comma` or `,` the comma character
 
 Therefore, the parser can also handle the following example:
 
@@ -172,10 +174,34 @@ Therefore, the parser can also handle the following example:
 
 Without comma delimiters, the key `y` would incorrectly map to the value `=`.
 
+### Custom literal spans
+The spec can be extended to provide optional custom literal spans which behave
+like the quote `"` begin and end pairs used for string literals. 
+However the quote literal pair must be prioritized first.
+
+### Multiline elements
+In order to avoid compromising simplicity, the backslash `\` character
+at the end of a line was chosen to defer the parsing of a potential element
+up until the end of the next line without the backslash terminator. The 
+concatenation of all lines terminated in this manner must be parsed as one.
+
+Example:
+```js
+var long_message: str="\
+      apple, bananas, coconut, diamond, eggplant,\
+      fig, grape, horse, igloo, joke, kangaroo,\
+      lemon, notebook, mango"
+```
+
 ### Grammar
 Production rule **__s__** represents any character sequence.\
 Production rule **__s'__** represents any non-reserved character sequence.\
 Production rule **__ϵ__** generates the empty set (no character).\
+Production rule **⌈** represents a user-defined literal begin\* character.\
+Production rule **⌋** represents a user-defined literal end\* character.
+
+**\*** It must be the case that **⌈** and **⌋** are eachother's compliment character.
+
 Because every line is independant, the grammar root begins with `<ELEMENT>`.
 
 * `<ELEMENT>` → `<SYMBOL><NAME><KEYVALUE>`
@@ -189,7 +215,7 @@ Because every line is independant, the grammar root begins with `<ELEMENT>`.
 * `<DELIMITER>` → ` ` | `,`
 * `<KEY>` → `<RAWTOKEN>`
 * `<VALUE>` → `<RAWTOKEN>`
-* `<RAWTOKEN>` → `<TOKEN>` | `"<TOKEN>"`
+* `<RAWTOKEN>` → `<TOKEN>` | `"<TOKEN>"` | **⌈** `<TOKEN>` **⌋**
 * `<TOKEN>` → **__s__**
 
 #### Reserved Characters
