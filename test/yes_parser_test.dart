@@ -461,4 +461,41 @@ void main() {
       expectedValues: expected,
     );
   });
+
+  test("Literals", () async {
+    const String line = "fn hello_world: (&int num, str message) {}";
+
+    final expected = <List<KeyVal?>>[
+      [
+        KeyVal(
+          val: 'hello_world:',
+        ),
+        KeyVal(
+          val: '(&int num, str message)',
+        ),
+        KeyVal(val: '{}'),
+      ],
+    ];
+
+    final parser = YesParser.fromString(
+      line,
+      literals: [
+        Literal(
+          begin: '(',
+          end: ')',
+        ),
+        Literal(
+          begin: '{',
+          end: '}',
+        ),
+      ],
+    );
+
+    checkArgs(
+      'Literals',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: expected,
+    );
+  });
 }
