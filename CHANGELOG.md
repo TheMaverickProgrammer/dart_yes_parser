@@ -1,7 +1,7 @@
 # 1.0.6
 - Added multiline support to the spec and the parser.
 - Added custom user literals support to the spec and the parser.
-- Updated tests to include these changes.
+- Updated readme and tests to include these changes.
 
 # 1.0.5
 
