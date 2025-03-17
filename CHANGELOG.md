@@ -1,4 +1,10 @@
+# 1.0.7
+
+- Preventing a crash by explicitly copying a List of literals that can otherwise happen if the user provides a `const` List or ungrowable List.
+- Added inline documentation for the two factory methods for the parser API.
+
 # 1.0.6
+
 - Added multiline support to the spec and the parser.
 - Added custom user literals support to the spec and the parser.
 - Updated readme and tests to include these changes.
