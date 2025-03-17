@@ -14,7 +14,9 @@
 !load_texture brick "brick_32.png"
 
 face texture=metal, name=f1
-vert x=-1, y=-1, z=-1
+vert x=-1\
+    y=-1\
+    z=-1
 vert x = 1, y = -1, z = -1
 vert x =1, y =1, z =-1
 vert x= -1, y= 1, z= -1 
