@@ -1,8 +1,11 @@
+# 1.0.8
+
+- After parsing a discovered token range, consume space characters. This patches the case where blanks were parsed as empty key-vals.
+
 # 1.0.7
 
 - Preventing a crash by explicitly copying a List of literals that can otherwise happen if the user provides a `const` List or ungrowable List.
 - Added inline documentation for the two factory methods for the parser API.
-- After parsing a discovered token range, consume space characters. This patches the case where blanks were parsed as empty key-vals.
 
 # 1.0.6
 
