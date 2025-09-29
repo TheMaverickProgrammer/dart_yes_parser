@@ -47,14 +47,24 @@ class YesParser {
 
   YesParser();
 
-  static Future<YesParser> fromFile(File file,
-      {List<Literal>? literals}) async {
+  /// Parse contents from [file].
+  ///
+  /// Optional user-defined [literals] are supported.
+  /// If this list is null, a default list of type [Literal]
+  /// is created with one entry of [Literal.quotes].
+  ///
+  /// Otherwise a copy of [literals] is made with a new
+  /// element of [Literal.quotes] at the front.
+  static Future<YesParser> fromFile(
+    File file, {
+    List<Literal>? literals,
+  }) async {
     final YesParser parser = YesParser();
 
-    // Provide or append default quote pair literals
+    // Provide default quote pair literals.
     literals = switch (literals) {
       null => [Literal.quotes()],
-      List<Literal> list => list..add(Literal.quotes()),
+      List<Literal> list => [Literal.quotes(), ...list],
     };
 
     await file
@@ -68,13 +78,24 @@ class YesParser {
     return parser;
   }
 
-  static YesParser fromString(String contents, {List<Literal>? literals}) {
+  /// Parse [contents] of type [String].
+  ///
+  /// Optional user-defined [literals] are supported.
+  /// If this list is null, a default list of type [Literal]
+  /// is created with one entry of [Literal.quotes].
+  ///
+  /// Otherwise a copy of [literals] is made with a new
+  /// element of [Literal.quotes] at the front.
+  static YesParser fromString(
+    String contents, {
+    List<Literal>? literals,
+  }) {
     final YesParser parser = YesParser();
 
     // Provide or append default quote pair literals
     literals = switch (literals) {
       null => [Literal.quotes()],
-      List<Literal> list => list..add(Literal.quotes()),
+      List<Literal> list => [Literal.quotes(), ...list],
     };
 
     contents

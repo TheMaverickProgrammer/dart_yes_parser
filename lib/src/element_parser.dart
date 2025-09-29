@@ -367,6 +367,11 @@ class ElementParser {
           );
           current++;
           lastTokenIdx = current;
+
+          // Scan ahead for the next non-space character or EOL.
+          while (current < len && input[current] == Glyphs.space.char) {
+            current++;
+          }
           continue;
         }
 
