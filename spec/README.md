@@ -169,7 +169,7 @@ The following are the only allowed delimiter characters:
 * `comma` or `,` the comma character
 
 > [!NOTE]
-> Tabs are considered white space and are promoted to a blank character.
+> Tabs are considered white space and are promoted to a blank character.\
 > Tabs which are wrapped between literal spans do not promote to a blank character.
 
 Therefore, the parser can also handle the following example:
