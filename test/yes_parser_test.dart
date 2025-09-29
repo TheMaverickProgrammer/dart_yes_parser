@@ -133,6 +133,8 @@ void main() {
       '"v" abcd',
       'w x y z="123"',
       'x a=b -c',
+      'y\tz\ty2\t\tz2\t\t',
+      'z a\t=\t1,b\t=\t2'
     ];
 
     const expected = <String>[
@@ -160,6 +162,8 @@ void main() {
       'v abcd',
       'w x, y, z=123',
       'x a=b, -c',
+      'y z, y2, z2',
+      'z a=1, b=2'
     ];
 
     final parser = YesParser.fromString(doc.join('\n'));
@@ -177,6 +181,7 @@ void main() {
       'a "aaa bbb"',
       'b "crab battle" "efficient car goose" "key3"="value3" "key4"=value4 "value5"',
       'c "1234"',
+      'd "\t\tez\t\t"'
     ];
 
     final expectedNotQuoted = <List<KeyVal>>[
@@ -189,6 +194,7 @@ void main() {
         KeyVal(val: 'value5'),
       ],
       [KeyVal(val: '1234')],
+      [KeyVal(val: '\t\tez\t\t')]
     ];
 
     final docStr = doc.join('\n');
@@ -207,7 +213,7 @@ void main() {
   test("KeyVals parse correctly", () async {
     const doc = <String>[
       'a key = val',
-      'b val val2',
+      'b    val      val2    val3    ',
       'c val',
       'd key=val',
       'e key = val,',
@@ -236,7 +242,7 @@ void main() {
 
     final expected = <List<KeyVal>>[
       [KeyVal(key: 'key', val: 'val')],
-      [KeyVal(val: 'val'), KeyVal(val: 'val2')],
+      [KeyVal(val: 'val'), KeyVal(val: 'val2'), KeyVal(val: 'val3')],
       [KeyVal(val: 'val')],
       [KeyVal(key: 'key', val: 'val')],
       [KeyVal(key: 'key', val: 'val')],
@@ -467,6 +473,73 @@ void main() {
 
     checkArgs(
       'Mult-line elements',
+      elements: parser.elementInfoList,
+      errors: parser.errorInfoList,
+      expectedValues: expected,
+    );
+  });
+
+  test("Tab-as-whitespace test", () async {
+    const doc = <String>[
+      'a b\tc',
+      'e\tf\tg',
+      'm n="\t\to\t\t"\tp',
+      'scenes act/level1.dev\\',
+      '       act/level2.dev\\',
+      '       act/level3.dev',
+    ];
+
+    final expected = <List<KeyVal?>>[
+      [
+        KeyVal(
+          val: 'b',
+        ),
+        KeyVal(
+          val: 'c',
+        ),
+      ],
+      [
+        KeyVal(
+          val: 'f',
+        ),
+        KeyVal(
+          val: 'g',
+        ),
+      ],
+      [
+        KeyVal(
+          key: 'n',
+          val: '\t\to\t\t',
+        ),
+        KeyVal(
+          val: 'p',
+        ),
+      ],
+      [
+        KeyVal(
+          val: 'act/level1.dev',
+        ),
+        KeyVal(
+          val: 'act/level2.dev',
+        ),
+        KeyVal(
+          val: 'act/level3.dev',
+        ),
+      ],
+    ];
+
+    final parser = YesParser.fromString(
+      doc.join('\n'),
+      literals: [
+        Literal(
+          begin: '[',
+          end: ']',
+        ),
+      ],
+    );
+
+    checkArgs(
+      'Tabs-as-whitespace Test',
       elements: parser.elementInfoList,
       errors: parser.errorInfoList,
       expectedValues: expected,

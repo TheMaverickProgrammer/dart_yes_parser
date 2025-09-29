@@ -27,7 +27,8 @@ enum Glyphs {
   space(' '),
   comma(','),
   quote(r'"'),
-  backslash(r'\');
+  backslash(r'\'),
+  tab('\t');
 
   final String char;
   const Glyphs(this.char);

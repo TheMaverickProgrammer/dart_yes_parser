@@ -69,7 +69,7 @@ class ElementParser {
 
     while (pos < len) {
       // Find first non-space character
-      if (line[pos] == Glyphs.space.char) {
+      if ([Glyphs.space.char, Glyphs.tab.char].contains(line[pos])) {
         pos++;
         continue;
       }
@@ -115,15 +115,19 @@ class ElementParser {
       break;
     }
 
-    // Step 3: Find end of element name (first space or EOL)
+    // Step 3: Find end of element name (first white space or EOL)
     pos = min(pos, len);
-    final int idx = line.indexOf(Glyphs.space.char, pos);
+
+    final int tpos = line.indexOf(Glyphs.tab.char, pos);
+    final int spos = line.indexOf(Glyphs.space.char, pos);
 
     final int end;
-    if (idx < 0) {
+    if (tpos == -1 && spos == -1) {
       end = len;
+    } else if (tpos != -1 && spos != -1) {
+      end = min(tpos, spos);
     } else {
-      end = min(len, idx);
+      end = max(tpos, spos);
     }
 
     final String name = line.substring(pos, end).unquote();
@@ -161,7 +165,7 @@ class ElementParser {
 
     // Find first non-space character
     while (start < len) {
-      if (Glyphs.space.char == input[start]) {
+      if ([Glyphs.space.char, Glyphs.tab.char].contains(input[start])) {
         start++;
         continue;
       }
@@ -217,7 +221,7 @@ class ElementParser {
     while (current < len) {
       final String c = input[current];
       final bool isComma = Glyphs.comma.char == c;
-      final bool isSpace = Glyphs.space.char == c;
+      final bool isSpace = [Glyphs.space.char, Glyphs.tab.char].contains(c);
       final bool isEqual = Glyphs.equal.char == c;
 
       bool isLiteral = false;
@@ -340,7 +344,10 @@ class ElementParser {
     while (current < len) {
       final String c = input[current];
       final bool isEqual = Glyphs.equal.char == c;
-      final bool isDelim = delimiter == c;
+      final bool isDelim = switch (_delimiter) {
+        Delimiters.comma => c == delimiter,
+        _ => [Glyphs.space.char, Glyphs.tab.char].contains(c),
+      };
 
       bool isLiteral = false;
       if (activeLiteral != null) {
@@ -369,7 +376,8 @@ class ElementParser {
           lastTokenIdx = current;
 
           // Scan ahead for the next non-space character or EOL.
-          while (current < len && input[current] == Glyphs.space.char) {
+          while (current < len &&
+              [Glyphs.space.char, Glyphs.tab.char].contains(input[current])) {
             current++;
           }
           continue;
@@ -441,8 +449,8 @@ class ElementParser {
       // assignments. e.g. `key=val`
       if (token.hasPivot) {
         final KeyVal kv = KeyVal(
-          key: data.substring(0, pivot).trim().unquote().trim(),
-          val: data.substring(pivot + 1, data.length).trim().unquote().trim(),
+          key: data.substring(0, pivot).trim().unquote(),
+          val: data.substring(pivot + 1, data.length).trim().unquote(),
         );
 
         _element?.upsert(kv);
@@ -450,7 +458,7 @@ class ElementParser {
       }
 
       // Nameless key value
-      final KeyVal kv = KeyVal(val: data.trim().unquote().trim());
+      final KeyVal kv = KeyVal(val: data.trim().unquote());
       _element?.add(kv);
     }
   }

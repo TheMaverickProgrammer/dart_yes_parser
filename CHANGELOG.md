@@ -1,3 +1,10 @@
+# 1.0.10
+
+- `YesParser.fromString(...)` now uses `RegExp(r'(\r\n|\n)')` to split content body parsed with carriage returns.
+- Tabs are considered "white space" when parsing. Like other space tokens, they respect literal span rules.
+- Added tests for catching tab regressions.
+- The author labored in humility upon discovery of these errors.
+
 # 1.0.9
 
 - Added additional tests to parser.

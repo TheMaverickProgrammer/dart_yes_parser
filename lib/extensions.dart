@@ -8,5 +8,5 @@ extension YesStringExtensions on String {
   String quote() => !isQuoted ? "\"$this\"" : this;
 
   /// Returns a new [String] without outer-quotes or itself if not quoted.
-  String unquote() => isQuoted ? substring(1, length - 1) : this;
+  String unquote() => isQuoted ? substring(1, length - 1) : trim();
 }

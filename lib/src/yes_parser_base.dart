@@ -39,6 +39,8 @@ typedef ParseCompleteFunc = void Function(List<ElementInfo>, List<ErrorInfo>);
 ///
 /// The parser can read a document's contents using [YesParser.fromString].
 class YesParser {
+  static final Pattern linebreak = RegExp(r'(\r\n|\n)');
+
   int _lineCount = 0;
   String? _buildingLine;
   final List<Attribute> _attrs = [];
@@ -99,7 +101,7 @@ class YesParser {
     };
 
     contents
-        .split('\n')
+        .split(linebreak)
         .forEach((line) => parser._handleLine(line, literals: literals));
     parser._handleComplete();
 
