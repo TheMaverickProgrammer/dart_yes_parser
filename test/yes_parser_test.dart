@@ -230,6 +230,8 @@ void main() {
       'v "crab battle" "efficient car goose" "key3"="value3" "key4"=value4 value5 "value6"',
       'w x y z="123"',
       'x a=b -c',
+      'let1 x: int = 4',
+      'let2 x: int=32'
     ];
 
     final expected = <List<KeyVal>>[
@@ -290,6 +292,15 @@ void main() {
         KeyVal(key: 'z', val: '123'),
       ],
       [KeyVal(key: 'a', val: 'b'), KeyVal(val: '-c')],
+      [
+        KeyVal(val: 'x:'),
+        KeyVal(val: 'int'),
+        KeyVal(val: '4'),
+      ],
+      [
+        KeyVal(val: 'x:'),
+        KeyVal(key: 'int', val: '32'),
+      ],
     ];
 
     final parser = YesParser.fromString(doc.join('\n'));
