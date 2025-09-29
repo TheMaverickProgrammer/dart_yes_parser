@@ -1,3 +1,7 @@
+# 1.0.9
+
+- Added additional tests to parser.
+
 # 1.0.8
 
 - After parsing a discovered token range, consume space characters. This patches the case where blanks were parsed as empty key-vals.
